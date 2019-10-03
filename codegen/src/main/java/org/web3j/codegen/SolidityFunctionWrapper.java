@@ -82,7 +82,7 @@ public class SolidityFunctionWrapper extends Generator {
 
     private static final String BINARY = "BINARY";
     private static final String WEB3J = "web3j";
-    private static final String CREDENTIALS = "credentials";
+    protected static final String CREDENTIALS = "credentials";
     private static final String CONTRACT_GAS_PROVIDER = "contractGasProvider";
     private static final String TRANSACTION_MANAGER = "transactionManager";
     private static final String INITIAL_VALUE = "initialWeiValue";
@@ -117,6 +117,11 @@ public class SolidityFunctionWrapper extends Generator {
 
     private final int addressLength;
 
+    protected Class web3jClass;
+    protected String web3jVariableName;
+    protected Class transactionManagerClass;
+    protected String transactoinManagerVariableName;
+
     private static final String regex = "(\\w+)(?:\\[(.*?)\\])(?:\\[(.*?)\\])?";
     private static final Pattern pattern = Pattern.compile(regex);
 
@@ -145,7 +150,11 @@ public class SolidityFunctionWrapper extends Generator {
                 useJavaPrimitiveTypes,
                 generateSendTxForCalls,
                 addressLength,
-                new LogGenerationReporter(LOGGER));
+                new LogGenerationReporter(LOGGER),
+                Web3j.class,
+                WEB3J,
+                TransactionManager.class,
+                TRANSACTION_MANAGER);
     }
 
     public SolidityFunctionWrapper(
@@ -154,11 +163,38 @@ public class SolidityFunctionWrapper extends Generator {
             boolean generateSendTxForCalls,
             int addressLength,
             GenerationReporter reporter) {
+        this(
+                useNativeJavaTypes,
+                useJavaPrimitiveTypes,
+                generateSendTxForCalls,
+                addressLength,
+                reporter,
+                Web3j.class,
+                WEB3J,
+                TransactionManager.class,
+                TRANSACTION_MANAGER);
+    }
+
+    public SolidityFunctionWrapper(
+            boolean useNativeJavaTypes,
+            boolean useJavaPrimitiveTypes,
+            boolean generateSendTxForCalls,
+            int addressLength,
+            GenerationReporter reporter,
+            Class web3jClass,
+            String web3jVariableName,
+            Class transactionManagerClass,
+            String transactoinManagerVariableName) {
         this.useNativeJavaTypes = useNativeJavaTypes;
         this.useJavaPrimitiveTypes = useJavaPrimitiveTypes;
         this.addressLength = addressLength;
         this.reporter = reporter;
         this.generateSendTxForCalls = generateSendTxForCalls;
+
+        this.web3jClass = web3jClass;
+        this.web3jVariableName = web3jVariableName;
+        this.transactionManagerClass = transactionManagerClass;
+        this.transactoinManagerVariableName = transactoinManagerVariableName;
     }
 
     public void generateJavaFiles(
@@ -375,8 +411,8 @@ public class SolidityFunctionWrapper extends Generator {
                         buildDeploy(
                                 className,
                                 functionDefinition,
-                                TransactionManager.class,
-                                TRANSACTION_MANAGER,
+                                this.transactionManagerClass,
+                                this.transactoinManagerVariableName,
                                 true));
                 methodSpecs.add(
                         buildDeploy(
@@ -389,8 +425,8 @@ public class SolidityFunctionWrapper extends Generator {
                         buildDeploy(
                                 className,
                                 functionDefinition,
-                                TransactionManager.class,
-                                TRANSACTION_MANAGER,
+                                this.transactionManagerClass,
+                                this.transactoinManagerVariableName,
                                 false));
             }
         }
@@ -415,23 +451,31 @@ public class SolidityFunctionWrapper extends Generator {
 
             MethodSpec.Builder transactionManagerMethodBuilder =
                     getDeployMethodSpec(
-                            className, TransactionManager.class, TRANSACTION_MANAGER, false, true);
+                            className,
+                            this.transactionManagerClass,
+                            this.transactoinManagerVariableName,
+                            false,
+                            true);
             methodSpecs.add(
                     buildDeployNoParams(
                             transactionManagerMethodBuilder,
                             className,
-                            TRANSACTION_MANAGER,
+                            transactoinManagerVariableName,
                             false,
                             true));
 
             MethodSpec.Builder transactionManagerMethodBuilderNoGasProvider =
                     getDeployMethodSpec(
-                            className, TransactionManager.class, TRANSACTION_MANAGER, false, false);
+                            className,
+                            this.transactionManagerClass,
+                            this.transactoinManagerVariableName,
+                            false,
+                            false);
             methodSpecs.add(
                     buildDeployNoParams(
                             transactionManagerMethodBuilderNoGasProvider,
                             className,
-                            TRANSACTION_MANAGER,
+                            transactoinManagerVariableName,
                             false,
                             false));
         }
@@ -474,13 +518,13 @@ public class SolidityFunctionWrapper extends Generator {
         return fields;
     }
 
-    private static MethodSpec buildConstructor(
+    protected MethodSpec buildConstructor(
             Class authType, String authName, boolean withGasProvider) {
         MethodSpec.Builder toReturn =
                 MethodSpec.constructorBuilder()
                         .addModifiers(Modifier.PROTECTED)
                         .addParameter(String.class, CONTRACT_ADDRESS)
-                        .addParameter(Web3j.class, WEB3J)
+                        .addParameter(this.web3jClass, this.web3jVariableName)
                         .addParameter(authType, authName);
 
         if (withGasProvider) {
@@ -489,7 +533,7 @@ public class SolidityFunctionWrapper extends Generator {
                             "super($N, $N, $N, $N, $N)",
                             BINARY,
                             CONTRACT_ADDRESS,
-                            WEB3J,
+                            this.web3jVariableName,
                             authName,
                             CONTRACT_GAS_PROVIDER);
         } else {
@@ -499,7 +543,7 @@ public class SolidityFunctionWrapper extends Generator {
                             "super($N, $N, $N, $N, $N, $N)",
                             BINARY,
                             CONTRACT_ADDRESS,
-                            WEB3J,
+                            this.web3jVariableName,
                             authName,
                             GAS_PRICE,
                             GAS_LIMIT)
@@ -532,7 +576,7 @@ public class SolidityFunctionWrapper extends Generator {
         }
     }
 
-    private static MethodSpec buildDeployWithParams(
+    private MethodSpec buildDeployWithParams(
             MethodSpec.Builder methodBuilder,
             String className,
             String inputParams,
@@ -552,7 +596,7 @@ public class SolidityFunctionWrapper extends Generator {
                     "return deployRemoteCall("
                             + "$L.class, $L, $L, $L, $L, $L, encodedConstructor, $L)",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     GAS_PRICE,
                     GAS_LIMIT,
@@ -564,7 +608,7 @@ public class SolidityFunctionWrapper extends Generator {
                     "return deployRemoteCall("
                             + "$L.class, $L, $L, $L, $L, encodedConstructor, $L)",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     CONTRACT_GAS_PROVIDER,
                     BINARY,
@@ -573,7 +617,7 @@ public class SolidityFunctionWrapper extends Generator {
             methodBuilder.addStatement(
                     "return deployRemoteCall($L.class, $L, $L, $L, $L, $L, encodedConstructor)",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     GAS_PRICE,
                     GAS_LIMIT,
@@ -583,7 +627,7 @@ public class SolidityFunctionWrapper extends Generator {
             methodBuilder.addStatement(
                     "return deployRemoteCall($L.class, $L, $L, $L, $L, encodedConstructor)",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     CONTRACT_GAS_PROVIDER,
                     BINARY);
@@ -592,7 +636,7 @@ public class SolidityFunctionWrapper extends Generator {
         return methodBuilder.build();
     }
 
-    private static MethodSpec buildDeployNoParams(
+    private MethodSpec buildDeployNoParams(
             MethodSpec.Builder methodBuilder,
             String className,
             String authName,
@@ -602,7 +646,7 @@ public class SolidityFunctionWrapper extends Generator {
             methodBuilder.addStatement(
                     "return deployRemoteCall($L.class, $L, $L, $L, $L, $L, \"\", $L)",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     GAS_PRICE,
                     GAS_LIMIT,
@@ -613,7 +657,7 @@ public class SolidityFunctionWrapper extends Generator {
             methodBuilder.addStatement(
                     "return deployRemoteCall($L.class, $L, $L, $L, $L, \"\", $L)",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     CONTRACT_GAS_PROVIDER,
                     BINARY,
@@ -622,7 +666,7 @@ public class SolidityFunctionWrapper extends Generator {
             methodBuilder.addStatement(
                     "return deployRemoteCall($L.class, $L, $L, $L, $L, $L, \"\")",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     GAS_PRICE,
                     GAS_LIMIT,
@@ -632,7 +676,7 @@ public class SolidityFunctionWrapper extends Generator {
             methodBuilder.addStatement(
                     "return deployRemoteCall($L.class, $L, $L, $L, $L, \"\")",
                     className,
-                    WEB3J,
+                    this.web3jVariableName,
                     authName,
                     CONTRACT_GAS_PROVIDER,
                     BINARY);
@@ -641,7 +685,7 @@ public class SolidityFunctionWrapper extends Generator {
         return methodBuilder.build();
     }
 
-    private static MethodSpec.Builder getDeployMethodSpec(
+    private MethodSpec.Builder getDeployMethodSpec(
             String className,
             Class authType,
             String authName,
@@ -651,7 +695,7 @@ public class SolidityFunctionWrapper extends Generator {
                 MethodSpec.methodBuilder("deploy")
                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                         .returns(buildRemoteCall(TypeVariableName.get(className, Type.class)))
-                        .addParameter(Web3j.class, WEB3J)
+                        .addParameter(this.web3jClass, this.web3jVariableName)
                         .addParameter(authType, authName);
         if (isPayable && !withGasProvider) {
             return builder.addParameter(BigInteger.class, GAS_PRICE)
@@ -668,14 +712,14 @@ public class SolidityFunctionWrapper extends Generator {
         }
     }
 
-    private static MethodSpec buildLoad(
+    private MethodSpec buildLoad(
             String className, Class authType, String authName, boolean withGasProvider) {
         MethodSpec.Builder toReturn =
                 MethodSpec.methodBuilder("load")
                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                         .returns(TypeVariableName.get(className, Type.class))
                         .addParameter(String.class, CONTRACT_ADDRESS)
-                        .addParameter(Web3j.class, WEB3J)
+                        .addParameter(this.web3jClass, this.web3jVariableName)
                         .addParameter(authType, authName);
 
         if (withGasProvider) {
@@ -684,7 +728,7 @@ public class SolidityFunctionWrapper extends Generator {
                             "return new $L($L, $L, $L, $L)",
                             className,
                             CONTRACT_ADDRESS,
-                            WEB3J,
+                            this.web3jVariableName,
                             authName,
                             CONTRACT_GAS_PROVIDER);
         } else {
@@ -694,7 +738,7 @@ public class SolidityFunctionWrapper extends Generator {
                             "return new $L($L, $L, $L, $L, $L)",
                             className,
                             CONTRACT_ADDRESS,
-                            WEB3J,
+                            this.web3jVariableName,
                             authName,
                             GAS_PRICE,
                             GAS_LIMIT)

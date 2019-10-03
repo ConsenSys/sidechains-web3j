@@ -22,6 +22,10 @@ import org.web3j.protocol.admin.methods.response.BooleanResponse;
 import org.web3j.protocol.besu.request.CreatePrivacyGroupRequest;
 import org.web3j.protocol.besu.response.BesuEthAccountsMapResponse;
 import org.web3j.protocol.besu.response.BesuFullDebugTraceResponse;
+import org.web3j.protocol.besu.response.crosschain.CrosschainCheckUnlock;
+import org.web3j.protocol.besu.response.crosschain.CrosschainIsLockable;
+import org.web3j.protocol.besu.response.crosschain.CrosschainIsLocked;
+import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
 import org.web3j.protocol.besu.response.privacy.PrivCreatePrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivFindPrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivGetPrivacyPrecompileAddress;
@@ -31,6 +35,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthAccounts;
 import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.MinerStartResponse;
 import org.web3j.protocol.eea.JsonRpc2_0Eea;
 import org.web3j.utils.Base64String;
@@ -177,5 +182,49 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 Collections.singletonList(transactionHash),
                 web3jService,
                 PrivGetTransactionReceipt.class);
+    }
+
+    public Request<?, EthSendTransaction> crosschainSendCrossChainRawTransaction(
+            String signedTransactionData) {
+        return new Request<>(
+                "eth_sendRawCrosschainTransaction",
+                Arrays.asList(signedTransactionData),
+                web3jService,
+                EthSendTransaction.class);
+    }
+
+    public Request<?, CrosschainProcessSubordinateView> crosschainProcessSubordinateView(
+            String signedTransactionData) {
+        return new Request<>(
+                "eth_processSubordinateView",
+                Arrays.asList(signedTransactionData),
+                web3jService,
+                CrosschainProcessSubordinateView.class);
+    }
+
+    public Request<?, CrosschainIsLockable> crosschainIsLockable(
+            String address, DefaultBlockParameter defaultBlockParameter) {
+        return new Request<>(
+                "eth_isLockable",
+                Arrays.asList(address, defaultBlockParameter.getValue()),
+                web3jService,
+                CrosschainIsLockable.class);
+    }
+
+    public Request<?, CrosschainIsLocked> crosschainIsLocked(
+            String address, DefaultBlockParameter defaultBlockParameter) {
+        return new Request<>(
+                "eth_isLocked",
+                Arrays.asList(address, defaultBlockParameter.getValue()),
+                web3jService,
+                CrosschainIsLocked.class);
+    }
+
+    public Request<?, CrosschainCheckUnlock> crosschainCheckUnlock(String address) {
+        return new Request<>(
+                "cross_checkUnlock",
+                Arrays.asList(address),
+                web3jService,
+                CrosschainCheckUnlock.class);
     }
 }

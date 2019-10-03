@@ -2,6 +2,7 @@ rootProject.name = 'base'
 
 include 'abi'
 include 'besu'
+include 'besucodegen'
 include 'codegen'
 include 'contracts'
 include 'core'

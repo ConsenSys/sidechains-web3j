@@ -19,6 +19,10 @@ import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.admin.methods.response.BooleanResponse;
 import org.web3j.protocol.besu.response.BesuEthAccountsMapResponse;
 import org.web3j.protocol.besu.response.BesuFullDebugTraceResponse;
+import org.web3j.protocol.besu.response.crosschain.CrosschainCheckUnlock;
+import org.web3j.protocol.besu.response.crosschain.CrosschainIsLockable;
+import org.web3j.protocol.besu.response.crosschain.CrosschainIsLocked;
+import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
 import org.web3j.protocol.besu.response.privacy.PrivCreatePrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivFindPrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivGetPrivacyPrecompileAddress;
@@ -28,6 +32,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthAccounts;
 import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.MinerStartResponse;
 import org.web3j.protocol.eea.Eea;
 import org.web3j.utils.Base64String;
@@ -84,4 +89,18 @@ public interface Besu extends Eea {
     Request<?, BooleanResponse> privDeletePrivacyGroup(final Base64String privacyGroupId);
 
     Request<?, PrivGetTransactionReceipt> privGetTransactionReceipt(final String transactionHash);
+
+    Request<?, EthSendTransaction> crosschainSendCrossChainRawTransaction(
+            String signedTransactionData);
+
+    Request<?, CrosschainProcessSubordinateView> crosschainProcessSubordinateView(
+            String signedTransactionData);
+
+    Request<?, CrosschainIsLockable> crosschainIsLockable(
+            String address, DefaultBlockParameter defaultBlockParameter);
+
+    Request<?, CrosschainIsLocked> crosschainIsLocked(
+            String address, DefaultBlockParameter defaultBlockParameter);
+
+    Request<?, CrosschainCheckUnlock> crosschainCheckUnlock(String address);
 }
