@@ -5,3 +5,6 @@ dependencies {
     compile project(':codegen'),
             project(':besu')
 }
+
+apply plugin: 'application'
+application { mainClassName = 'org.web3j.codegen.CrosschainSolidityFunctionWrapperGenerator' }

@@ -12,13 +12,32 @@
  */
 package org.web3j.codegen;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Function;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.crypto.Credentials;
 import org.web3j.protocol.besu.Besu;
+import org.web3j.protocol.core.methods.response.AbiDefinition;
 import org.web3j.protocol.core.methods.response.Log;
+import org.web3j.tx.Contract;
 import org.web3j.tx.CrosschainTransactionManager;
+import org.web3j.utils.Strings;
 
 /** Generate Java Classes based on generated Solidity bin and abi files. */
 public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
@@ -61,55 +80,61 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 CROSSCHAIN_TRANSACTION_MANAGER);
     }
 
-    //    public void generateJavaFiles(
-    //            Class<? extends Contract> contractClass,
-    //            String contractName,
-    //            String bin,
-    //            List<AbiDefinition> abi,
-    //            String destinationDir,
-    //            String basePackageName,
-    //            Map<String, String> addresses)
-    //            throws IOException, ClassNotFoundException {
-    //
-    //        if (!java.lang.reflect.Modifier.isAbstract(contractClass.getModifiers())) {
-    //            throw new IllegalArgumentException("Contract base class must be abstract");
-    //        }
-    //
-    //        String className = Strings.capitaliseFirstLetter(contractName);
-    //        TypeSpec.Builder classBuilder = createClassBuilder(contractClass, className, bin);
-    //
-    //        classBuilder.addAnnotation(
-    //                AnnotationSpec.builder(SuppressWarnings.class)
-    //                        .addMember("value", "\"rawtypes\"")
-    //                        .build());
-    //
-    //        classBuilder.addMethod(buildConstructor(Credentials.class, CREDENTIALS, false));
-    //        classBuilder.addMethod(buildConstructor(Credentials.class, CREDENTIALS, true));
-    //        classBuilder.addMethod(
-    //                buildConstructor(this.transactionManagerClass,
-    // this.transactoinManagerVariableName, false));
-    //        classBuilder.addMethod(
-    //                buildConstructor(this.transactionManagerClass,
-    // this.transactoinManagerVariableName, true));
-    //        classBuilder.addFields(buildFuncNameConstants(abi));
-    //        classBuilder.addMethods(buildFunctionDefinitions(className, classBuilder, abi));
-    //        classBuilder.addMethod(buildLoad(className, Credentials.class, CREDENTIALS, false));
-    //        classBuilder.addMethod(
-    //                buildLoad(className, this.transactionManagerClass,
-    // this.transactoinManagerVariableName, false));
-    //        classBuilder.addMethod(buildLoad(className, Credentials.class, CREDENTIALS, true));
-    //        classBuilder.addMethod(
-    //                buildLoad(className, this.transactionManagerClass,
-    // this.transactoinManagerVariableName, true));
-    //        if (!bin.equals(Contract.BIN_NOT_PROVIDED)) {
-    //            classBuilder.addMethods(buildDeployMethods(className, classBuilder, abi));
-    //        }
-    //
-    //        addAddressesSupport(classBuilder, addresses);
-    //
-    //        write(basePackageName, classBuilder.build(), destinationDir);
-    //    }
-    //
+    public void generateJavaFiles(
+            Class<? extends Contract> contractClass,
+            String contractName,
+            String bin,
+            List<AbiDefinition> abi,
+            String destinationDir,
+            String basePackageName,
+            Map<String, String> addresses)
+            throws IOException, ClassNotFoundException {
+
+        if (!java.lang.reflect.Modifier.isAbstract(contractClass.getModifiers())) {
+            throw new IllegalArgumentException("Contract base class must be abstract");
+        }
+
+        String className = Strings.capitaliseFirstLetter(contractName);
+        TypeSpec.Builder classBuilder = createClassBuilder(contractClass, className, bin);
+
+        classBuilder.addAnnotation(
+                AnnotationSpec.builder(SuppressWarnings.class)
+                        .addMember("value", "\"rawtypes\"")
+                        .build());
+
+        classBuilder.addMethod(buildConstructor(Credentials.class, CREDENTIALS, false));
+        classBuilder.addMethod(buildConstructor(Credentials.class, CREDENTIALS, true));
+        classBuilder.addMethod(
+                buildConstructor(
+                        this.transactionManagerClass, this.transactoinManagerVariableName, false));
+        classBuilder.addMethod(
+                buildConstructor(
+                        this.transactionManagerClass, this.transactoinManagerVariableName, true));
+        classBuilder.addFields(buildFuncNameConstants(abi));
+        classBuilder.addMethods(buildFunctionDefinitions(className, classBuilder, abi));
+        classBuilder.addMethod(buildLoad(className, Credentials.class, CREDENTIALS, false));
+        classBuilder.addMethod(
+                buildLoad(
+                        className,
+                        this.transactionManagerClass,
+                        this.transactoinManagerVariableName,
+                        false));
+        classBuilder.addMethod(buildLoad(className, Credentials.class, CREDENTIALS, true));
+        classBuilder.addMethod(
+                buildLoad(
+                        className,
+                        this.transactionManagerClass,
+                        this.transactoinManagerVariableName,
+                        true));
+        if (!bin.equals(Contract.BIN_NOT_PROVIDED)) {
+            classBuilder.addMethods(buildDeployMethods(className, classBuilder, abi));
+        }
+
+        addAddressesSupport(classBuilder, addresses);
+
+        write(basePackageName, classBuilder.build(), destinationDir);
+    }
+
     //    private void addAddressesSupport(TypeSpec.Builder classBuilder, Map<String, String>
     // addresses) {
     //        if (addresses != null) {
@@ -895,119 +920,119 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
     //        return results;
     //    }
     //
-    //    private void buildConstantFunction(
-    //            AbiDefinition functionDefinition,
-    //            MethodSpec.Builder methodBuilder,
-    //            List<TypeName> outputParameterTypes,
-    //            String inputParams,
-    //            boolean useUpperCase)
-    //            throws ClassNotFoundException {
-    //
-    //        String functionName = functionDefinition.getName();
-    //
-    //        if (outputParameterTypes.isEmpty()) {
-    //            methodBuilder.addStatement(
-    //                    "throw new RuntimeException"
-    //                            + "(\"cannot call constant function with void return type\")");
-    //        } else if (outputParameterTypes.size() == 1) {
-    //
-    //            TypeName typeName = outputParameterTypes.get(0);
-    //            TypeName nativeReturnTypeName;
-    //            if (useNativeJavaTypes) {
-    //                nativeReturnTypeName = getWrapperRawType(typeName);
-    //            } else {
-    //                nativeReturnTypeName = getWrapperType(typeName);
-    //            }
-    //            methodBuilder.returns(buildRemoteFunctionCall(nativeReturnTypeName));
-    //
-    //            methodBuilder.addStatement(
-    //                    "final $T function = "
-    //                            + "new $T($N, \n$T.<$T>asList($L), "
-    //                            + "\n$T.<$T<?>>asList(new $T<$T>() {}))",
-    //                    Function.class,
-    //                    Function.class,
-    //                    funcNameToConst(functionName, useUpperCase),
-    //                    Arrays.class,
-    //                    Type.class,
-    //                    inputParams,
-    //                    Arrays.class,
-    //                    TypeReference.class,
-    //                    TypeReference.class,
-    //                    typeName);
-    //
-    //            if (useNativeJavaTypes) {
-    //                if (nativeReturnTypeName.equals(ClassName.get(List.class))) {
-    //                    // We return list. So all the list elements should
-    //                    // also be converted to native types
-    //                    TypeName listType = ParameterizedTypeName.get(List.class, Type.class);
-    //
-    //                    CodeBlock.Builder callCode = CodeBlock.builder();
-    //                    callCode.addStatement(
-    //                            "$T result = "
-    //                                    + "($T) executeCallSingleValueReturn(function, $T.class)",
-    //                            listType,
-    //                            listType,
-    //                            nativeReturnTypeName);
-    //                    callCode.addStatement("return convertToNative(result)");
-    //
-    //                    TypeSpec callableType =
-    //                            TypeSpec.anonymousClassBuilder("")
-    //                                    .addSuperinterface(
-    //                                            ParameterizedTypeName.get(
-    //                                                    ClassName.get(Callable.class),
-    //                                                    nativeReturnTypeName))
-    //                                    .addMethod(
-    //                                            MethodSpec.methodBuilder("call")
-    //                                                    .addAnnotation(Override.class)
-    //                                                    .addAnnotation(
-    //                                                            AnnotationSpec.builder(
-    //
-    // SuppressWarnings.class)
-    //                                                                    .addMember(
-    //                                                                            "value",
-    //                                                                            "$S",
-    //                                                                            "unchecked")
-    //                                                                    .build())
-    //                                                    .addModifiers(Modifier.PUBLIC)
-    //                                                    .addException(Exception.class)
-    //                                                    .returns(nativeReturnTypeName)
-    //                                                    .addCode(callCode.build())
-    //                                                    .build())
-    //                                    .build();
-    //
-    //                    methodBuilder.addStatement(
-    //                            "return new $T(function,\n$L)",
-    //                            buildRemoteFunctionCall(nativeReturnTypeName),
-    //                            callableType);
-    //                } else {
-    //                    methodBuilder.addStatement(
-    //                            "return executeRemoteCallSingleValueReturn(function, $T.class)",
-    //                            nativeReturnTypeName);
-    //                }
-    //            } else {
-    //                methodBuilder.addStatement("return
-    // executeRemoteCallSingleValueReturn(function)");
-    //            }
-    //        } else {
-    //            List<TypeName> returnTypes = buildReturnTypes(outputParameterTypes);
-    //
-    //            ParameterizedTypeName parameterizedTupleType =
-    //                    ParameterizedTypeName.get(
-    //                            ClassName.get(
-    //                                    "org.web3j.tuples.generated", "Tuple" +
-    // returnTypes.size()),
-    //                            returnTypes.toArray(new TypeName[0]));
-    //
-    //            methodBuilder.returns(buildRemoteFunctionCall(parameterizedTupleType));
-    //
-    //            buildVariableLengthReturnFunctionConstructor(
-    //                    methodBuilder, functionName, inputParams, outputParameterTypes,
-    // useUpperCase);
-    //
-    //            buildTupleResultContainer(methodBuilder, parameterizedTupleType,
-    // outputParameterTypes);
-    //        }
-    //    }
+        private void buildConstantFunctionAsSubordinateView(
+                AbiDefinition functionDefinition,
+                MethodSpec.Builder methodBuilder,
+                List<TypeName> outputParameterTypes,
+                String inputParams,
+                boolean useUpperCase)
+                throws ClassNotFoundException {
+
+            String functionName = functionDefinition.getName() + "_AsSignedCrosschainSubordinateView";
+
+            if (outputParameterTypes.isEmpty()) {
+                methodBuilder.addStatement(
+                        "throw new RuntimeException"
+                                + "(\"cannot call constant function with void return type\")");
+            } else if (outputParameterTypes.size() == 1) {
+
+                TypeName typeName = outputParameterTypes.get(0);
+                TypeName nativeReturnTypeName;
+                if (useNativeJavaTypes) {
+                    nativeReturnTypeName = getWrapperRawType(typeName);
+                } else {
+                    nativeReturnTypeName = getWrapperType(typeName);
+                }
+                methodBuilder.returns(buildRemoteFunctionCall(nativeReturnTypeName));
+
+                methodBuilder.addStatement(
+                        "final $T function = "
+                                + "new $T($N, \n$T.<$T>asList($L), "
+                                + "\n$T.<$T<?>>asList(new $T<$T>() {}))",
+                        Function.class,
+                        Function.class,
+                        funcNameToConst(functionName, useUpperCase),
+                        Arrays.class,
+                        Type.class,
+                        inputParams,
+                        Arrays.class,
+                        TypeReference.class,
+                        TypeReference.class,
+                        typeName);
+
+                if (useNativeJavaTypes) {
+                    if (nativeReturnTypeName.equals(ClassName.get(List.class))) {
+                        // We return list. So all the list elements should
+                        // also be converted to native types
+                        TypeName listType = ParameterizedTypeName.get(List.class, Type.class);
+
+                        CodeBlock.Builder callCode = CodeBlock.builder();
+                        callCode.addStatement(
+                                "$T result = "
+                                        + "($T) executeCallSingleValueReturn(function, $T.class)",
+                                listType,
+                                listType,
+                                nativeReturnTypeName);
+                        callCode.addStatement("return convertToNative(result)");
+
+                        TypeSpec callableType =
+                                TypeSpec.anonymousClassBuilder("")
+                                        .addSuperinterface(
+                                                ParameterizedTypeName.get(
+                                                        ClassName.get(Callable.class),
+                                                        nativeReturnTypeName))
+                                        .addMethod(
+                                                MethodSpec.methodBuilder("call")
+                                                        .addAnnotation(Override.class)
+                                                        .addAnnotation(
+                                                                AnnotationSpec.builder(
+
+     SuppressWarnings.class)
+                                                                        .addMember(
+                                                                                "value",
+                                                                                "$S",
+                                                                                "unchecked")
+                                                                        .build())
+                                                        .addModifiers(Modifier.PUBLIC)
+                                                        .addException(Exception.class)
+                                                        .returns(nativeReturnTypeName)
+                                                        .addCode(callCode.build())
+                                                        .build())
+                                        .build();
+
+                        methodBuilder.addStatement(
+                                "return new $T(function,\n$L)",
+                                buildRemoteFunctionCall(nativeReturnTypeName),
+                                callableType);
+                    } else {
+                        methodBuilder.addStatement(
+                                "return executeRemoteCallSingleValueReturn(function, $T.class)",
+                                nativeReturnTypeName);
+                    }
+                } else {
+                    methodBuilder.addStatement("return
+     executeRemoteCallSingleValueReturn(function)");
+                }
+            } else {
+                List<TypeName> returnTypes = buildReturnTypes(outputParameterTypes);
+
+                ParameterizedTypeName parameterizedTupleType =
+                        ParameterizedTypeName.get(
+                                ClassName.get(
+                                        "org.web3j.tuples.generated", "Tuple" +
+     returnTypes.size()),
+                                returnTypes.toArray(new TypeName[0]));
+
+                methodBuilder.returns(buildRemoteFunctionCall(parameterizedTupleType));
+
+                buildVariableLengthReturnFunctionConstructor(
+                        methodBuilder, functionName, inputParams, outputParameterTypes,
+     useUpperCase);
+
+                buildTupleResultContainer(methodBuilder, parameterizedTupleType,
+     outputParameterTypes);
+            }
+        }
     //
     //    private static ParameterizedTypeName buildRemoteCall(TypeName typeName) {
     //        return ParameterizedTypeName.get(ClassName.get(RemoteCall.class), typeName);

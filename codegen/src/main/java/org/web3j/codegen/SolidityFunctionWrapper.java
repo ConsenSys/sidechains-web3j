@@ -111,7 +111,7 @@ public class SolidityFunctionWrapper extends Generator {
                     + "<a href=\"https://github.com/web3j/web3j/tree/master/codegen\">"
                     + "codegen module</a> to update.\n";
 
-    private final boolean useNativeJavaTypes;
+    protected final boolean useNativeJavaTypes;
     private final boolean useJavaPrimitiveTypes;
     private final boolean generateSendTxForCalls;
 
@@ -255,7 +255,8 @@ public class SolidityFunctionWrapper extends Generator {
         write(basePackageName, classBuilder.build(), destinationDir);
     }
 
-    private void addAddressesSupport(TypeSpec.Builder classBuilder, Map<String, String> addresses) {
+    protected void addAddressesSupport(
+            TypeSpec.Builder classBuilder, Map<String, String> addresses) {
         if (addresses != null) {
 
             ClassName stringType = ClassName.get(String.class);
@@ -307,7 +308,7 @@ public class SolidityFunctionWrapper extends Generator {
         }
     }
 
-    private TypeSpec.Builder createClassBuilder(
+    protected TypeSpec.Builder createClassBuilder(
             Class<? extends Contract> contractClass, String className, String binary) {
 
         String javadoc = CODEGEN_WARNING + getWeb3jVersion();
@@ -353,7 +354,7 @@ public class SolidityFunctionWrapper extends Generator {
         return eventName.toUpperCase() + "_EVENT";
     }
 
-    private List<MethodSpec> buildFunctionDefinitions(
+    protected List<MethodSpec> buildFunctionDefinitions(
             String className,
             TypeSpec.Builder classBuilder,
             List<AbiDefinition> functionDefinitions)
@@ -712,7 +713,7 @@ public class SolidityFunctionWrapper extends Generator {
         }
     }
 
-    private MethodSpec buildLoad(
+    protected MethodSpec buildLoad(
             String className, Class authType, String authName, boolean withGasProvider) {
         MethodSpec.Builder toReturn =
                 MethodSpec.methodBuilder("load")
