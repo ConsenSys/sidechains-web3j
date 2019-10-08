@@ -19,6 +19,8 @@ import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.ens.EnsResolver;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.gas.ContractGasProvider;
 
 public abstract class CrosschainContract extends Contract {
@@ -76,49 +78,23 @@ public abstract class CrosschainContract extends Contract {
                 nestedSubordinateTransactionsAndViews);
     }
 
-    //    private String contractAddress;
-    //    private String contractBinary;
-    //    private CrosschainTransactionManager transactionManager;
-    //    private ContractGasProvider contractGasProvider;
+    public TransactionReceipt executeCrossChainTransaction(
+            Function function, byte[][] subordinateTransactionsAndViews)
+            throws TransactionException, IOException {
+        String method = function.getName();
+        BigInteger weiValue = BigInteger.ZERO;
+        BigInteger gasPrice = this.gasProvider.getGasPrice(method);
+        BigInteger gasLimit = this.gasProvider.getGasLimit(method);
 
-    //    public CrosschainContract(
-    //            Contract contract,
-    //            CrosschainTransactionManager transactionManager,
-    //            ContractGasProvider contractGasProvider) {
-    //        this.contractAddress = contract.getContractAddress();
-    //        this.transactionManager = transactionManager;
-    //        this.contractGasProvider = contractGasProvider;
-    //    }
-    //
-    //    public CrosschainContract(
-    //            String contractBinary,
-    //            CrosschainTransactionManager transactionManager,
-    //            ContractGasProvider contractGasProvider) {
-    //        this.contractBinary = contractBinary;
-    //        this.transactionManager = transactionManager;
-    //        this.contractGasProvider = contractGasProvider;
-    //    }
+        return this.crosschainTransactionManager.executeCrosschainTransaction(
+                gasPrice,
+                gasLimit,
+                contractAddress,
+                FunctionEncoder.encode(function),
+                weiValue,
+                subordinateTransactionsAndViews);
+    }
 
-    //    public byte[] getAsSignedCrossChainSubordinateTransaction(
-    //            String method, Uint256[] params, byte[][] subordinateTransactionsAndViews)
-    //            throws IOException {
-    //        final Function function =
-    //                new Function(
-    //                        method, Arrays.asList(params),
-    // Collections.<TypeReference<?>>emptyList());
-    //
-    //        BigInteger weiValue = BigInteger.ZERO;
-    //        BigInteger gasPrice = contractGasProvider.getGasPrice(method);
-    //        BigInteger gasLimit = contractGasProvider.getGasLimit(method);
-    //
-    //        return transactionManager.createSignedSubordinateTransaction(
-    //                gasPrice,
-    //                gasLimit,
-    //                contractAddress,
-    //                FunctionEncoder.encode(function),
-    //                weiValue,
-    //                subordinateTransactionsAndViews);
-    //    }
     //
     //    public byte[] getAsSignedLockableContractDeploy(byte[][] subordinateTransactionsAndViews)
     //            throws IOException {
@@ -146,48 +122,6 @@ public abstract class CrosschainContract extends Contract {
     //                subordinateTransactionsAndViews);
     //    }
     //
-    //    public byte[] getAsSignedCrossChainViewUint256(
-    //            String method, Uint256[] params, byte[][] subordinateTransactionsAndViews)
-    //            throws IOException {
-    //        final Function function =
-    //                new Function(
-    //                        method,
-    //                        Arrays.asList(params),
-    //                        Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-    //
-    //        BigInteger weiValue = BigInteger.ZERO;
-    //        BigInteger gasPrice = contractGasProvider.getGasPrice(method);
-    //        BigInteger gasLimit = contractGasProvider.getGasLimit(method);
-    //
-    //        return transactionManager.createSignedSubordinateView(
-    //                gasPrice,
-    //                gasLimit,
-    //                contractAddress,
-    //                FunctionEncoder.encode(function),
-    //                weiValue,
-    //                subordinateTransactionsAndViews);
-    //    }
-    //
-    //    public TransactionReceipt executeCrossChain_Tx(
-    //            String method, Uint256[] params, byte[][] subordinateTransactionsAndViews)
-    //            throws TransactionException, IOException {
-    //        final Function function =
-    //                new Function(
-    //                        method, Arrays.asList(params),
-    // Collections.<TypeReference<?>>emptyList());
-    //
-    //        BigInteger weiValue = BigInteger.ZERO;
-    //        BigInteger gasPrice = contractGasProvider.getGasPrice(method);
-    //        BigInteger gasLimit = contractGasProvider.getGasLimit(method);
-    //
-    //        return transactionManager.executeCrosschainTransaction(
-    //                gasPrice,
-    //                gasLimit,
-    //                contractAddress,
-    //                FunctionEncoder.encode(function),
-    //                weiValue,
-    //                subordinateTransactionsAndViews);
-    //    }
     //
     //    // TODO try to use RemoteCall<T> syntax.
     //    public BigInteger executeCrossChainSubordianteViewUint256(

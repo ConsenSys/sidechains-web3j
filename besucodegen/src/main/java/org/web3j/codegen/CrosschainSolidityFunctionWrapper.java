@@ -37,6 +37,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.besu.Besu;
 import org.web3j.protocol.core.methods.response.AbiDefinition;
 import org.web3j.protocol.core.methods.response.Log;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.CrosschainTransactionManager;
 import org.web3j.utils.Strings;
@@ -946,7 +947,20 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
                     "nestedSubordinateTransactionsAndViews",
                     Modifier.FINAL);
-            buildTransactionFunctionAsSubordinateView(
+            buildTransactionFunctionAsSubordinateTransaction(
+                    functionDefinition, methodBuilder, inputParams, useUpperCase);
+            results.add(methodBuilder.build());
+
+            // Create the function as an originating crosschain transaction method.
+            functionName = functionDefinition.getName() + "_AsCrosschainTransaction";
+            methodBuilder = MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
+            inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
+            // Add nested subordinate transactions and views as an additional parameter.
+            methodBuilder.addParameter(
+                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
+                    "nestedSubordinateTransactionsAndViews",
+                    Modifier.FINAL);
+            buildTransactionFunctionAsCrosschainTransaction(
                     functionDefinition, methodBuilder, inputParams, useUpperCase);
             results.add(methodBuilder.build());
         }
@@ -983,22 +997,10 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 typeName);
 
         methodBuilder.addStatement(
-                "final $T function = new $T(\n$N, \n$T.<$T>asList($L), \n$T"
-                        + ".<$T<?>>emptyList())",
-                Function.class,
-                Function.class,
-                funcNameToConst(functionName, useUpperCase),
-                Arrays.class,
-                Type.class,
-                inputParams,
-                Collections.class,
-                TypeReference.class);
-
-        methodBuilder.addStatement(
                 "return createSignedSubordinateView(function, nestedSubordinateTransactionsAndViews)");
     }
 
-    private void buildTransactionFunctionAsSubordinateView(
+    private void buildTransactionFunctionAsSubordinateTransaction(
             AbiDefinition functionDefinition,
             MethodSpec.Builder methodBuilder,
             String inputParams,
@@ -1024,7 +1026,31 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 "return createSignedSubordinateTransaction(function, nestedSubordinateTransactionsAndViews)");
     }
 
-    //
+    private void buildTransactionFunctionAsCrosschainTransaction(
+            AbiDefinition functionDefinition,
+            MethodSpec.Builder methodBuilder,
+            String inputParams,
+            boolean useUpperCase) {
+        String functionName = functionDefinition.getName();
+
+        methodBuilder.returns(buildRemoteFunctionCall(TypeName.get(TransactionReceipt.class)));
+
+        methodBuilder.addStatement(
+                "final $T function = new $T(\n$N, \n$T.<$T>asList($L), \n$T"
+                        + ".<$T<?>>emptyList())",
+                Function.class,
+                Function.class,
+                funcNameToConst(functionName, useUpperCase),
+                Arrays.class,
+                Type.class,
+                inputParams,
+                Collections.class,
+                TypeReference.class);
+
+        methodBuilder.addStatement(
+                "return executeCrossChainTransaction(function, nestedSubordinateTransactionsAndViews)");
+    }
+
     //    private static ParameterizedTypeName buildRemoteCall(TypeName typeName) {
     //        return ParameterizedTypeName.get(ClassName.get(RemoteCall.class), typeName);
     //    }
