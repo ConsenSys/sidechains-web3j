@@ -94,7 +94,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
         return CrosschainTransactionEncoder.signMessage(rawCrossChainTx, chainId, credentials);
     }
 
-    public byte[] createSignedSubordinateTx(
+    public byte[] createSignedSubordinateTransaction(
             BigInteger gasPrice,
             BigInteger gasLimit,
             String to,

@@ -12,17 +12,23 @@
  */
 package org.web3j.tx;
 
+import java.io.IOException;
+import java.math.BigInteger;
+
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.datatypes.Function;
 import org.web3j.ens.EnsResolver;
 import org.web3j.protocol.Web3j;
 import org.web3j.tx.gas.ContractGasProvider;
 
 public abstract class CrosschainContract extends Contract {
+    CrosschainTransactionManager crosschainTransactionManager;
 
     protected CrosschainContract(
             String contractBinary,
             String contractAddress,
             Web3j web3j,
-            TransactionManager transactionManager,
+            CrosschainTransactionManager transactionManager,
             ContractGasProvider gasProvider) {
 
         super(contractBinary, contractAddress, web3j, transactionManager, gasProvider);
@@ -36,6 +42,38 @@ public abstract class CrosschainContract extends Contract {
             TransactionManager transactionManager,
             ContractGasProvider gasProvider) {
         super(ensResolver, contractBinary, contractAddress, web3j, transactionManager, gasProvider);
+    }
+
+    protected byte[] createSignedSubordinateView(Function function, byte[][] nestedSubordinateViews)
+            throws IOException {
+        String method = function.getName();
+        BigInteger weiValue = BigInteger.ZERO;
+        BigInteger gasPrice = this.gasProvider.getGasPrice(method);
+        BigInteger gasLimit = this.gasProvider.getGasLimit(method);
+
+        return this.crosschainTransactionManager.createSignedSubordinateView(
+                gasPrice,
+                gasLimit,
+                contractAddress,
+                FunctionEncoder.encode(function),
+                weiValue,
+                nestedSubordinateViews);
+    }
+
+    protected byte[] createSignedSubordinateTransaction(
+            Function function, byte[][] nestedSubordinateTransactionsAndViews) throws IOException {
+        String method = function.getName();
+        BigInteger weiValue = BigInteger.ZERO;
+        BigInteger gasPrice = this.gasProvider.getGasPrice(method);
+        BigInteger gasLimit = this.gasProvider.getGasLimit(method);
+
+        return this.crosschainTransactionManager.createSignedSubordinateTransaction(
+                gasPrice,
+                gasLimit,
+                contractAddress,
+                FunctionEncoder.encode(function),
+                weiValue,
+                nestedSubordinateTransactionsAndViews);
     }
 
     //    private String contractAddress;
@@ -73,7 +111,7 @@ public abstract class CrosschainContract extends Contract {
     //        BigInteger gasPrice = contractGasProvider.getGasPrice(method);
     //        BigInteger gasLimit = contractGasProvider.getGasLimit(method);
     //
-    //        return transactionManager.createSignedSubordinateTx(
+    //        return transactionManager.createSignedSubordinateTransaction(
     //                gasPrice,
     //                gasLimit,
     //                contractAddress,

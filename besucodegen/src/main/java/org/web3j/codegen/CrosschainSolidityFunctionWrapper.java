@@ -13,16 +13,18 @@
 package org.web3j.codegen;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Modifier;
 
 import com.squareup.javapoet.AnnotationSpec;
+import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import org.slf4j.Logger;
@@ -111,7 +113,10 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 buildConstructor(
                         this.transactionManagerClass, this.transactoinManagerVariableName, true));
         classBuilder.addFields(buildFuncNameConstants(abi));
+
+        // Build the functions for transactions, views, and events.
         classBuilder.addMethods(buildFunctionDefinitions(className, classBuilder, abi));
+
         classBuilder.addMethod(buildLoad(className, Credentials.class, CREDENTIALS, false));
         classBuilder.addMethod(
                 buildLoad(
@@ -861,178 +866,164 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
     //        return buildFunctions(functionDefinition, true);
     //    }
     //
-    //    List<MethodSpec> buildFunctions(AbiDefinition functionDefinition, boolean useUpperCase)
-    //            throws ClassNotFoundException {
-    //
-    //        List<MethodSpec> results = new ArrayList<>(2);
-    //        String functionName = functionDefinition.getName();
-    //
-    //        if (generateSendTxForCalls) {
-    //            final String funcNamePrefix;
-    //            if (functionDefinition.isConstant()) {
-    //                funcNamePrefix = "call";
-    //            } else {
-    //                funcNamePrefix = "send";
-    //            }
-    //            // Prefix function name to avoid naming collision
-    //            functionName = funcNamePrefix + "_" + functionName;
-    //        } else {
-    //            // If the solidity function name is a reserved word
-    //            // in the current java version prepend it with "_"
-    //            if (!SourceVersion.isName(functionName)) {
-    //                functionName = "_" + functionName;
-    //            }
-    //        }
-    //
-    //        MethodSpec.Builder methodBuilder =
-    //                MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
-    //
-    //        final String inputParams = addParameters(methodBuilder,
-    // functionDefinition.getInputs());
-    //        final List<TypeName> outputParameterTypes =
-    //                buildTypeNames(functionDefinition.getOutputs(), useJavaPrimitiveTypes);
-    //
-    //        if (functionDefinition.isConstant()) {
-    //            // Avoid generating runtime exception call
-    //            if (functionDefinition.hasOutputs()) {
-    //                buildConstantFunction(
-    //                        functionDefinition,
-    //                        methodBuilder,
-    //                        outputParameterTypes,
-    //                        inputParams,
-    //                        useUpperCase);
-    //
-    //                results.add(methodBuilder.build());
-    //            }
-    //            if (generateSendTxForCalls) {
-    //                AbiDefinition sendFuncDefinition = new AbiDefinition(functionDefinition);
-    //                sendFuncDefinition.setConstant(false);
-    //                results.addAll(buildFunctions(sendFuncDefinition));
-    //            }
-    //        }
-    //
-    //        if (!functionDefinition.isConstant()) {
-    //            buildTransactionFunction(functionDefinition, methodBuilder, inputParams,
-    // useUpperCase);
-    //            results.add(methodBuilder.build());
-    //        }
-    //
-    //        return results;
-    //    }
-    //
-        private void buildConstantFunctionAsSubordinateView(
-                AbiDefinition functionDefinition,
-                MethodSpec.Builder methodBuilder,
-                List<TypeName> outputParameterTypes,
-                String inputParams,
-                boolean useUpperCase)
-                throws ClassNotFoundException {
+    List<MethodSpec> buildFunctions(AbiDefinition functionDefinition, boolean useUpperCase)
+            throws ClassNotFoundException {
 
-            String functionName = functionDefinition.getName() + "_AsSignedCrosschainSubordinateView";
+        List<MethodSpec> results = new ArrayList<>(2);
+        String functionName = functionDefinition.getName();
 
-            if (outputParameterTypes.isEmpty()) {
-                methodBuilder.addStatement(
-                        "throw new RuntimeException"
-                                + "(\"cannot call constant function with void return type\")");
-            } else if (outputParameterTypes.size() == 1) {
-
-                TypeName typeName = outputParameterTypes.get(0);
-                TypeName nativeReturnTypeName;
-                if (useNativeJavaTypes) {
-                    nativeReturnTypeName = getWrapperRawType(typeName);
-                } else {
-                    nativeReturnTypeName = getWrapperType(typeName);
-                }
-                methodBuilder.returns(buildRemoteFunctionCall(nativeReturnTypeName));
-
-                methodBuilder.addStatement(
-                        "final $T function = "
-                                + "new $T($N, \n$T.<$T>asList($L), "
-                                + "\n$T.<$T<?>>asList(new $T<$T>() {}))",
-                        Function.class,
-                        Function.class,
-                        funcNameToConst(functionName, useUpperCase),
-                        Arrays.class,
-                        Type.class,
-                        inputParams,
-                        Arrays.class,
-                        TypeReference.class,
-                        TypeReference.class,
-                        typeName);
-
-                if (useNativeJavaTypes) {
-                    if (nativeReturnTypeName.equals(ClassName.get(List.class))) {
-                        // We return list. So all the list elements should
-                        // also be converted to native types
-                        TypeName listType = ParameterizedTypeName.get(List.class, Type.class);
-
-                        CodeBlock.Builder callCode = CodeBlock.builder();
-                        callCode.addStatement(
-                                "$T result = "
-                                        + "($T) executeCallSingleValueReturn(function, $T.class)",
-                                listType,
-                                listType,
-                                nativeReturnTypeName);
-                        callCode.addStatement("return convertToNative(result)");
-
-                        TypeSpec callableType =
-                                TypeSpec.anonymousClassBuilder("")
-                                        .addSuperinterface(
-                                                ParameterizedTypeName.get(
-                                                        ClassName.get(Callable.class),
-                                                        nativeReturnTypeName))
-                                        .addMethod(
-                                                MethodSpec.methodBuilder("call")
-                                                        .addAnnotation(Override.class)
-                                                        .addAnnotation(
-                                                                AnnotationSpec.builder(
-
-     SuppressWarnings.class)
-                                                                        .addMember(
-                                                                                "value",
-                                                                                "$S",
-                                                                                "unchecked")
-                                                                        .build())
-                                                        .addModifiers(Modifier.PUBLIC)
-                                                        .addException(Exception.class)
-                                                        .returns(nativeReturnTypeName)
-                                                        .addCode(callCode.build())
-                                                        .build())
-                                        .build();
-
-                        methodBuilder.addStatement(
-                                "return new $T(function,\n$L)",
-                                buildRemoteFunctionCall(nativeReturnTypeName),
-                                callableType);
-                    } else {
-                        methodBuilder.addStatement(
-                                "return executeRemoteCallSingleValueReturn(function, $T.class)",
-                                nativeReturnTypeName);
-                    }
-                } else {
-                    methodBuilder.addStatement("return
-     executeRemoteCallSingleValueReturn(function)");
-                }
+        if (this.generateSendTxForCalls) {
+            final String funcNamePrefix;
+            if (functionDefinition.isConstant()) {
+                funcNamePrefix = "call";
             } else {
-                List<TypeName> returnTypes = buildReturnTypes(outputParameterTypes);
-
-                ParameterizedTypeName parameterizedTupleType =
-                        ParameterizedTypeName.get(
-                                ClassName.get(
-                                        "org.web3j.tuples.generated", "Tuple" +
-     returnTypes.size()),
-                                returnTypes.toArray(new TypeName[0]));
-
-                methodBuilder.returns(buildRemoteFunctionCall(parameterizedTupleType));
-
-                buildVariableLengthReturnFunctionConstructor(
-                        methodBuilder, functionName, inputParams, outputParameterTypes,
-     useUpperCase);
-
-                buildTupleResultContainer(methodBuilder, parameterizedTupleType,
-     outputParameterTypes);
+                funcNamePrefix = "send";
+            }
+            // Prefix function name to avoid naming collision
+            functionName = funcNamePrefix + "_" + functionName;
+        } else {
+            // If the solidity function name is a reserved word
+            // in the current java version prepend it with "_"
+            if (!SourceVersion.isName(functionName)) {
+                functionName = "_" + functionName;
             }
         }
+
+        MethodSpec.Builder methodBuilder =
+                MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
+
+        String inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
+        final List<TypeName> outputParameterTypes =
+                buildTypeNames(functionDefinition.getOutputs(), this.useJavaPrimitiveTypes);
+
+        if (functionDefinition.isConstant()) {
+            // Avoid generating runtime exception call
+            if (functionDefinition.hasOutputs()) {
+                // Create the constant call / view for a single chain call.
+                buildConstantFunction(
+                        functionDefinition,
+                        methodBuilder,
+                        outputParameterTypes,
+                        inputParams,
+                        useUpperCase);
+                results.add(methodBuilder.build());
+
+                // Create the get as a signed subordinate view method.
+                functionName = functionDefinition.getName() + "_AsSignedCrosschainSubordinateView";
+                methodBuilder =
+                        MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
+                inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
+                // Add nested subordinate views as an additional parameter.
+                methodBuilder.addParameter(
+                        ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
+                        "nestedSubordinateViews",
+                        Modifier.FINAL);
+                buildConstantFunctionAsSubordinateView(
+                        functionDefinition,
+                        methodBuilder,
+                        outputParameterTypes,
+                        inputParams,
+                        useUpperCase);
+                results.add(methodBuilder.build());
+            }
+            if (generateSendTxForCalls) {
+                AbiDefinition sendFuncDefinition = new AbiDefinition(functionDefinition);
+                sendFuncDefinition.setConstant(false);
+                results.addAll(buildFunctions(sendFuncDefinition));
+            }
+        } else {
+            // Create the single blockchain transaction function.
+            buildTransactionFunction(functionDefinition, methodBuilder, inputParams, useUpperCase);
+            results.add(methodBuilder.build());
+
+            // Create the function as a signed subordinate transaction method.
+            functionName =
+                    functionDefinition.getName() + "_AsSignedCrosschainSubordinateTransaction";
+            methodBuilder = MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
+            inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
+            // Add nested subordinate transactions and views as an additional parameter.
+            methodBuilder.addParameter(
+                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
+                    "nestedSubordinateTransactionsAndViews",
+                    Modifier.FINAL);
+            buildTransactionFunctionAsSubordinateView(
+                    functionDefinition, methodBuilder, inputParams, useUpperCase);
+            results.add(methodBuilder.build());
+        }
+
+        return results;
+    }
+
+    private void buildConstantFunctionAsSubordinateView(
+            AbiDefinition functionDefinition,
+            MethodSpec.Builder methodBuilder,
+            List<TypeName> outputParameterTypes,
+            String inputParams,
+            boolean useUpperCase) {
+        String functionName = functionDefinition.getName();
+
+        // Return the byte array representing the signed transaction
+        methodBuilder.returns(ArrayTypeName.of(TypeName.BYTE));
+
+        TypeName typeName = outputParameterTypes.get(0);
+
+        methodBuilder.addStatement(
+                "final $T function = "
+                        + "new $T($N, \n$T.<$T>asList($L), "
+                        + "\n$T.<$T<?>>asList(new $T<$T>() {}))",
+                Function.class,
+                Function.class,
+                funcNameToConst(functionName, useUpperCase),
+                Arrays.class,
+                Type.class,
+                inputParams,
+                Arrays.class,
+                TypeReference.class,
+                TypeReference.class,
+                typeName);
+
+        methodBuilder.addStatement(
+                "final $T function = new $T(\n$N, \n$T.<$T>asList($L), \n$T"
+                        + ".<$T<?>>emptyList())",
+                Function.class,
+                Function.class,
+                funcNameToConst(functionName, useUpperCase),
+                Arrays.class,
+                Type.class,
+                inputParams,
+                Collections.class,
+                TypeReference.class);
+
+        methodBuilder.addStatement(
+                "return createSignedSubordinateView(function, nestedSubordinateTransactionsAndViews)");
+    }
+
+    private void buildTransactionFunctionAsSubordinateView(
+            AbiDefinition functionDefinition,
+            MethodSpec.Builder methodBuilder,
+            String inputParams,
+            boolean useUpperCase) {
+        String functionName = functionDefinition.getName();
+
+        // Return the byte array representing the signed transaction
+        methodBuilder.returns(ArrayTypeName.of(TypeName.BYTE));
+
+        methodBuilder.addStatement(
+                "final $T function = new $T(\n$N, \n$T.<$T>asList($L), \n$T"
+                        + ".<$T<?>>emptyList())",
+                Function.class,
+                Function.class,
+                funcNameToConst(functionName, useUpperCase),
+                Arrays.class,
+                Type.class,
+                inputParams,
+                Collections.class,
+                TypeReference.class);
+
+        methodBuilder.addStatement(
+                "return createSignedSubordinateTransaction(function, nestedSubordinateTransactionsAndViews)");
+    }
+
     //
     //    private static ParameterizedTypeName buildRemoteCall(TypeName typeName) {
     //        return ParameterizedTypeName.get(ClassName.get(RemoteCall.class), typeName);

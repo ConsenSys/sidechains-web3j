@@ -112,8 +112,8 @@ public class SolidityFunctionWrapper extends Generator {
                     + "codegen module</a> to update.\n";
 
     protected final boolean useNativeJavaTypes;
-    private final boolean useJavaPrimitiveTypes;
-    private final boolean generateSendTxForCalls;
+    protected final boolean useJavaPrimitiveTypes;
+    protected final boolean generateSendTxForCalls;
 
     private final int addressLength;
 
@@ -1032,7 +1032,7 @@ public class SolidityFunctionWrapper extends Generator {
         return results;
     }
 
-    private void buildConstantFunction(
+    protected void buildConstantFunction(
             AbiDefinition functionDefinition,
             MethodSpec.Builder methodBuilder,
             List<TypeName> outputParameterTypes,
@@ -1149,7 +1149,7 @@ public class SolidityFunctionWrapper extends Generator {
         return ParameterizedTypeName.get(ClassName.get(RemoteFunctionCall.class), typeName);
     }
 
-    private void buildTransactionFunction(
+    protected void buildTransactionFunction(
             AbiDefinition functionDefinition,
             MethodSpec.Builder methodBuilder,
             String inputParams,
@@ -1607,7 +1607,7 @@ public class SolidityFunctionWrapper extends Generator {
         return Arrays.asList(abiDefinition);
     }
 
-    private static String funcNameToConst(String funcName, boolean useUpperCase) {
+    protected static String funcNameToConst(String funcName, boolean useUpperCase) {
         if (useUpperCase) {
             return FUNC_NAME_PREFIX + funcName.toUpperCase();
         } else {
