@@ -80,15 +80,15 @@ import org.web3j.utils.Version;
 /** Generate Java Classes based on generated Solidity bin and abi files. */
 public class SolidityFunctionWrapper extends Generator {
 
-    private static final String BINARY = "BINARY";
-    private static final String WEB3J = "web3j";
+    protected static final String BINARY = "BINARY";
+    protected static final String WEB3J = "web3j";
     protected static final String CREDENTIALS = "credentials";
-    private static final String CONTRACT_GAS_PROVIDER = "contractGasProvider";
-    private static final String TRANSACTION_MANAGER = "transactionManager";
-    private static final String INITIAL_VALUE = "initialWeiValue";
+    protected static final String CONTRACT_GAS_PROVIDER = "contractGasProvider";
+    protected static final String TRANSACTION_MANAGER = "transactionManager";
+    protected static final String INITIAL_VALUE = "initialWeiValue";
     private static final String CONTRACT_ADDRESS = "contractAddress";
-    private static final String GAS_PRICE = "gasPrice";
-    private static final String GAS_LIMIT = "gasLimit";
+    protected static final String GAS_PRICE = "gasPrice";
+    protected static final String GAS_LIMIT = "gasLimit";
     private static final String FILTER = "filter";
     private static final String START_BLOCK = "startBlock";
     private static final String END_BLOCK = "endBlock";
@@ -435,13 +435,15 @@ public class SolidityFunctionWrapper extends Generator {
         // constructor will not be specified in ABI file if its empty
         if (!constructor) {
             MethodSpec.Builder credentialsMethodBuilder =
-                    getDeployMethodSpec(className, Credentials.class, CREDENTIALS, false, true);
+                    getDeployMethodSpec(
+                            className, Credentials.class, CREDENTIALS, false, true, false);
             methodSpecs.add(
                     buildDeployNoParams(
                             credentialsMethodBuilder, className, CREDENTIALS, false, true));
 
             MethodSpec.Builder credentialsMethodBuilderNoGasProvider =
-                    getDeployMethodSpec(className, Credentials.class, CREDENTIALS, false, false);
+                    getDeployMethodSpec(
+                            className, Credentials.class, CREDENTIALS, false, false, false);
             methodSpecs.add(
                     buildDeployNoParams(
                             credentialsMethodBuilderNoGasProvider,
@@ -456,7 +458,8 @@ public class SolidityFunctionWrapper extends Generator {
                             this.transactionManagerClass,
                             this.transactoinManagerVariableName,
                             false,
-                            true);
+                            true,
+                            false);
             methodSpecs.add(
                     buildDeployNoParams(
                             transactionManagerMethodBuilder,
@@ -470,6 +473,7 @@ public class SolidityFunctionWrapper extends Generator {
                             className,
                             this.transactionManagerClass,
                             this.transactoinManagerVariableName,
+                            false,
                             false,
                             false);
             methodSpecs.add(
@@ -554,7 +558,7 @@ public class SolidityFunctionWrapper extends Generator {
         return toReturn.build();
     }
 
-    private MethodSpec buildDeploy(
+    protected MethodSpec buildDeploy(
             String className,
             AbiDefinition functionDefinition,
             Class authType,
@@ -565,7 +569,8 @@ public class SolidityFunctionWrapper extends Generator {
         boolean isPayable = functionDefinition.isPayable();
 
         MethodSpec.Builder methodBuilder =
-                getDeployMethodSpec(className, authType, authName, isPayable, withGasProvider);
+                getDeployMethodSpec(
+                        className, authType, authName, isPayable, withGasProvider, false);
         String inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
 
         if (!inputParams.isEmpty()) {
@@ -577,7 +582,7 @@ public class SolidityFunctionWrapper extends Generator {
         }
     }
 
-    private MethodSpec buildDeployWithParams(
+    protected MethodSpec buildDeployWithParams(
             MethodSpec.Builder methodBuilder,
             String className,
             String inputParams,
@@ -637,7 +642,7 @@ public class SolidityFunctionWrapper extends Generator {
         return methodBuilder.build();
     }
 
-    private MethodSpec buildDeployNoParams(
+    protected MethodSpec buildDeployNoParams(
             MethodSpec.Builder methodBuilder,
             String className,
             String authName,
@@ -686,14 +691,16 @@ public class SolidityFunctionWrapper extends Generator {
         return methodBuilder.build();
     }
 
-    private MethodSpec.Builder getDeployMethodSpec(
+    protected MethodSpec.Builder getDeployMethodSpec(
             String className,
             Class authType,
             String authName,
             boolean isPayable,
-            boolean withGasProvider) {
+            boolean withGasProvider,
+            boolean isLockable) {
+        String methodName = isLockable ? "deployLockable" : "deploy";
         MethodSpec.Builder builder =
-                MethodSpec.methodBuilder("deploy")
+                MethodSpec.methodBuilder(methodName)
                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                         .returns(buildRemoteCall(TypeVariableName.get(className, Type.class)))
                         .addParameter(this.web3jClass, this.web3jVariableName)

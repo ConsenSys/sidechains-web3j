@@ -30,6 +30,7 @@ import com.squareup.javapoet.TypeSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
@@ -40,6 +41,7 @@ import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.CrosschainTransactionManager;
+import org.web3j.tx.TransactionManager;
 import org.web3j.utils.Strings;
 
 /** Generate Java Classes based on generated Solidity bin and abi files. */
@@ -47,6 +49,8 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
 
     private static final String BESU = "besu";
     private static final String CROSSCHAIN_TRANSACTION_MANAGER = "crosschainTransactionManager";
+    private static final String SUBORDINATE_TRANSACTIONS_AND_VIEWS =
+            "nestedSubordinateTransactionsAndViews";
 
     private static final ClassName LOG = ClassName.get(Log.class);
     private static final Logger LOGGER =
@@ -278,300 +282,287 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
     //        return duplicateNames;
     //    }
     //
-    //    List<MethodSpec> buildDeployMethods(
-    //            String className,
-    //            TypeSpec.Builder classBuilder,
-    //            List<AbiDefinition> functionDefinitions)
-    //            throws ClassNotFoundException {
-    //        boolean constructor = false;
-    //        List<MethodSpec> methodSpecs = new ArrayList<>();
-    //        for (AbiDefinition functionDefinition : functionDefinitions) {
-    //            if (functionDefinition.getType().equals("constructor")) {
-    //                constructor = true;
-    //                methodSpecs.add(
-    //                        buildDeploy(
-    //                                className,
-    //                                functionDefinition,
-    //                                Credentials.class,
-    //                                CREDENTIALS,
-    //                                true));
-    //                methodSpecs.add(
-    //                        buildDeploy(
-    //                                className,
-    //                                functionDefinition,
-    //                                TransactionManager.class,
-    //                                TRANSACTION_MANAGER,
-    //                                true));
-    //                methodSpecs.add(
-    //                        buildDeploy(
-    //                                className,
-    //                                functionDefinition,
-    //                                Credentials.class,
-    //                                CREDENTIALS,
-    //                                false));
-    //                methodSpecs.add(
-    //                        buildDeploy(
-    //                                className,
-    //                                functionDefinition,
-    //                                TransactionManager.class,
-    //                                TRANSACTION_MANAGER,
-    //                                false));
-    //            }
-    //        }
-    //
-    //        // constructor will not be specified in ABI file if its empty
-    //        if (!constructor) {
-    //            MethodSpec.Builder credentialsMethodBuilder =
-    //                    getDeployMethodSpec(className, Credentials.class, CREDENTIALS, false,
-    // true);
-    //            methodSpecs.add(
-    //                    buildDeployNoParams(
-    //                            credentialsMethodBuilder, className, CREDENTIALS, false, true));
-    //
-    //            MethodSpec.Builder credentialsMethodBuilderNoGasProvider =
-    //                    getDeployMethodSpec(className, Credentials.class, CREDENTIALS, false,
-    // false);
-    //            methodSpecs.add(
-    //                    buildDeployNoParams(
-    //                            credentialsMethodBuilderNoGasProvider,
-    //                            className,
-    //                            CREDENTIALS,
-    //                            false,
-    //                            false));
-    //
-    //            MethodSpec.Builder transactionManagerMethodBuilder =
-    //                    getDeployMethodSpec(
-    //                            className, TransactionManager.class, TRANSACTION_MANAGER, false,
-    // true);
-    //            methodSpecs.add(
-    //                    buildDeployNoParams(
-    //                            transactionManagerMethodBuilder,
-    //                            className,
-    //                            TRANSACTION_MANAGER,
-    //                            false,
-    //                            true));
-    //
-    //            MethodSpec.Builder transactionManagerMethodBuilderNoGasProvider =
-    //                    getDeployMethodSpec(
-    //                            className, TransactionManager.class, TRANSACTION_MANAGER, false,
-    // false);
-    //            methodSpecs.add(
-    //                    buildDeployNoParams(
-    //                            transactionManagerMethodBuilderNoGasProvider,
-    //                            className,
-    //                            TRANSACTION_MANAGER,
-    //                            false,
-    //                            false));
-    //        }
-    //
-    //        return methodSpecs;
-    //    }
-    //
-    //    Iterable<FieldSpec> buildFuncNameConstants(List<AbiDefinition> functionDefinitions) {
-    //        List<FieldSpec> fields = new ArrayList<>();
-    //        Set<String> fieldNames = new HashSet<>();
-    //        fieldNames.add(Contract.FUNC_DEPLOY);
-    //        Set<String> duplicateFunctionNames = getDuplicateFunctionNames(functionDefinitions);
-    //        if (!duplicateFunctionNames.isEmpty()) {
-    //            System.out.println(
-    //                    "\nWarning: Duplicate field(s) found: "
-    //                            + duplicateFunctionNames
-    //                            + ". Please don't use names which will be the same in
-    // uppercase.");
-    //        }
-    //        for (AbiDefinition functionDefinition : functionDefinitions) {
-    //            if (functionDefinition.getType().equals(TYPE_FUNCTION)) {
-    //                String funcName = functionDefinition.getName();
-    //
-    //                if (!fieldNames.contains(funcName)) {
-    //                    boolean useUpperCase =
-    //                            !duplicateFunctionNames.contains(funcNameToConst(funcName, true));
-    //                    FieldSpec field =
-    //                            FieldSpec.builder(
-    //                                            String.class,
-    //                                            funcNameToConst(funcName, useUpperCase),
-    //                                            Modifier.PUBLIC,
-    //                                            Modifier.STATIC,
-    //                                            Modifier.FINAL)
-    //                                    .initializer("$S", funcName)
-    //                                    .build();
-    //                    fields.add(field);
-    //                    fieldNames.add(funcName);
-    //                }
-    //            }
-    //        }
-    //        return fields;
-    //    }
-    //
-    //    private static MethodSpec buildConstructor(
-    //            Class authType, String authName, boolean withGasProvider) {
-    //        MethodSpec.Builder toReturn =
-    //                MethodSpec.constructorBuilder()
-    //                        .addModifiers(Modifier.PROTECTED)
-    //                        .addParameter(String.class, CONTRACT_ADDRESS)
-    //                        .addParameter(Web3j.class, WEB3J)
-    //                        .addParameter(authType, authName);
-    //
-    //        if (withGasProvider) {
-    //            toReturn.addParameter(ContractGasProvider.class, CONTRACT_GAS_PROVIDER)
-    //                    .addStatement(
-    //                            "super($N, $N, $N, $N, $N)",
-    //                            BINARY,
-    //                            CONTRACT_ADDRESS,
-    //                            WEB3J,
-    //                            authName,
-    //                            CONTRACT_GAS_PROVIDER);
-    //        } else {
-    //            toReturn.addParameter(BigInteger.class, GAS_PRICE)
-    //                    .addParameter(BigInteger.class, GAS_LIMIT)
-    //                    .addStatement(
-    //                            "super($N, $N, $N, $N, $N, $N)",
-    //                            BINARY,
-    //                            CONTRACT_ADDRESS,
-    //                            WEB3J,
-    //                            authName,
-    //                            GAS_PRICE,
-    //                            GAS_LIMIT)
-    //                    .addAnnotation(Deprecated.class);
-    //        }
-    //
-    //        return toReturn.build();
-    //    }
-    //
-    //    private MethodSpec buildDeploy(
-    //            String className,
-    //            AbiDefinition functionDefinition,
-    //            Class authType,
-    //            String authName,
-    //            boolean withGasProvider)
-    //            throws ClassNotFoundException {
-    //
-    //        boolean isPayable = functionDefinition.isPayable();
-    //
-    //        MethodSpec.Builder methodBuilder =
-    //                getDeployMethodSpec(className, authType, authName, isPayable,
-    // withGasProvider);
-    //        String inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
-    //
-    //        if (!inputParams.isEmpty()) {
-    //            return buildDeployWithParams(
-    //                    methodBuilder, className, inputParams, authName, isPayable,
-    // withGasProvider);
-    //        } else {
-    //            return buildDeployNoParams(
-    //                    methodBuilder, className, authName, isPayable, withGasProvider);
-    //        }
-    //    }
-    //
-    //    private static MethodSpec buildDeployWithParams(
-    //            MethodSpec.Builder methodBuilder,
-    //            String className,
-    //            String inputParams,
-    //            String authName,
-    //            boolean isPayable,
-    //            boolean withGasProvider) {
-    //
-    //        methodBuilder.addStatement(
-    //                "$T encodedConstructor = $T.encodeConstructor(" + "$T.<$T>asList($L)" + ")",
-    //                String.class,
-    //                FunctionEncoder.class,
-    //                Arrays.class,
-    //                Type.class,
-    //                inputParams);
-    //        if (isPayable && !withGasProvider) {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall("
-    //                            + "$L.class, $L, $L, $L, $L, $L, encodedConstructor, $L)",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    GAS_PRICE,
-    //                    GAS_LIMIT,
-    //                    BINARY,
-    //                    INITIAL_VALUE);
-    //            methodBuilder.addAnnotation(Deprecated.class);
-    //        } else if (isPayable && withGasProvider) {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall("
-    //                            + "$L.class, $L, $L, $L, $L, encodedConstructor, $L)",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    CONTRACT_GAS_PROVIDER,
-    //                    BINARY,
-    //                    INITIAL_VALUE);
-    //        } else if (!isPayable && !withGasProvider) {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall($L.class, $L, $L, $L, $L, $L,
-    // encodedConstructor)",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    GAS_PRICE,
-    //                    GAS_LIMIT,
-    //                    BINARY);
-    //            methodBuilder.addAnnotation(Deprecated.class);
-    //        } else {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall($L.class, $L, $L, $L, $L, encodedConstructor)",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    CONTRACT_GAS_PROVIDER,
-    //                    BINARY);
-    //        }
-    //
-    //        return methodBuilder.build();
-    //    }
-    //
-    //    private static MethodSpec buildDeployNoParams(
-    //            MethodSpec.Builder methodBuilder,
-    //            String className,
-    //            String authName,
-    //            boolean isPayable,
-    //            boolean withGasPRovider) {
-    //        if (isPayable && !withGasPRovider) {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall($L.class, $L, $L, $L, $L, $L, \"\", $L)",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    GAS_PRICE,
-    //                    GAS_LIMIT,
-    //                    BINARY,
-    //                    INITIAL_VALUE);
-    //            methodBuilder.addAnnotation(Deprecated.class);
-    //        } else if (isPayable && withGasPRovider) {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall($L.class, $L, $L, $L, $L, \"\", $L)",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    CONTRACT_GAS_PROVIDER,
-    //                    BINARY,
-    //                    INITIAL_VALUE);
-    //        } else if (!isPayable && !withGasPRovider) {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall($L.class, $L, $L, $L, $L, $L, \"\")",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    GAS_PRICE,
-    //                    GAS_LIMIT,
-    //                    BINARY);
-    //            methodBuilder.addAnnotation(Deprecated.class);
-    //        } else {
-    //            methodBuilder.addStatement(
-    //                    "return deployRemoteCall($L.class, $L, $L, $L, $L, \"\")",
-    //                    className,
-    //                    WEB3J,
-    //                    authName,
-    //                    CONTRACT_GAS_PROVIDER,
-    //                    BINARY);
-    //        }
-    //
-    //        return methodBuilder.build();
-    //    }
+    List<MethodSpec> buildDeployMethods(
+            String className,
+            TypeSpec.Builder classBuilder,
+            List<AbiDefinition> functionDefinitions)
+            throws ClassNotFoundException {
+        boolean constructor = false;
+        List<MethodSpec> methodSpecs = new ArrayList<>();
+        for (AbiDefinition functionDefinition : functionDefinitions) {
+            if (functionDefinition.getType().equals("constructor")) {
+                constructor = true;
+                buildDeployMethods(methodSpecs, className, functionDefinition, false, false);
+                buildDeployMethods(methodSpecs, className, functionDefinition, true, false);
+                buildDeployMethods(methodSpecs, className, functionDefinition, true, true);
+
+                // TODO get as signed subordinate lockable contract deploy
+            }
+        }
+
+        // constructor will not be specified in ABI file if its empty
+        if (!constructor) {
+            buildDeployMethods(methodSpecs, className, null, false, false);
+            buildDeployMethods(methodSpecs, className, null, true, false);
+            buildDeployMethods(methodSpecs, className, null, true, true);
+
+            // TODO get as signed subordinate lockable contract deploy
+        }
+
+        return methodSpecs;
+    }
+
+    private void buildDeployMethods(
+            List<MethodSpec> methodSpecs,
+            String className,
+            AbiDefinition functionDefinition,
+            boolean lockableContractDeploy,
+            boolean withSubordinateTransactionsAndViews)
+            throws ClassNotFoundException {
+
+        methodSpecs.add(
+                buildDeploy(
+                        className,
+                        functionDefinition,
+                        Credentials.class,
+                        CREDENTIALS,
+                        true,
+                        lockableContractDeploy,
+                        withSubordinateTransactionsAndViews));
+        methodSpecs.add(
+                buildDeploy(
+                        className,
+                        functionDefinition,
+                        TransactionManager.class,
+                        TRANSACTION_MANAGER,
+                        true,
+                        lockableContractDeploy,
+                        withSubordinateTransactionsAndViews));
+        methodSpecs.add(
+                buildDeploy(
+                        className,
+                        functionDefinition,
+                        Credentials.class,
+                        CREDENTIALS,
+                        false,
+                        lockableContractDeploy,
+                        withSubordinateTransactionsAndViews));
+        methodSpecs.add(
+                buildDeploy(
+                        className,
+                        functionDefinition,
+                        TransactionManager.class,
+                        TRANSACTION_MANAGER,
+                        false,
+                        lockableContractDeploy,
+                        withSubordinateTransactionsAndViews));
+    }
+
+    private MethodSpec buildDeploy(
+            String className,
+            AbiDefinition functionDefinition,
+            Class authType,
+            String authName,
+            boolean withGasProvider,
+            boolean lockableContractDeploy,
+            boolean withSubordinateTransactionsAndViews)
+            throws ClassNotFoundException {
+
+        boolean withConstructor = functionDefinition != null;
+
+        boolean isPayable = false;
+        if (withConstructor) {
+            isPayable = functionDefinition.isPayable();
+        }
+
+        MethodSpec.Builder methodBuilder =
+                getDeployMethodSpec(
+                        className,
+                        authType,
+                        authName,
+                        isPayable,
+                        withGasProvider,
+                        lockableContractDeploy);
+        boolean hasParams = false;
+        String inputParams = null;
+        if (withConstructor) {
+            inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
+            hasParams = !inputParams.isEmpty();
+        }
+
+        if (withSubordinateTransactionsAndViews) {
+            // Add nested subordinate views as an additional parameter.
+            methodBuilder.addParameter(
+                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS,
+                    Modifier.FINAL);
+        }
+
+        if (hasParams) {
+            if (lockableContractDeploy) {
+                return buildLockableContractDeployWithParams(
+                        methodBuilder,
+                        className,
+                        inputParams,
+                        authName,
+                        isPayable,
+                        withGasProvider,
+                        withSubordinateTransactionsAndViews);
+            } else {
+                return buildDeployWithParams(
+                        methodBuilder,
+                        className,
+                        inputParams,
+                        authName,
+                        isPayable,
+                        withGasProvider);
+            }
+        } else {
+            if (lockableContractDeploy) {
+                return buildLockableContractDeployNoParams(
+                        methodBuilder,
+                        className,
+                        authName,
+                        isPayable,
+                        withGasProvider,
+                        withSubordinateTransactionsAndViews);
+            } else {
+                return buildDeployNoParams(
+                        methodBuilder, className, authName, isPayable, withGasProvider);
+            }
+        }
+    }
+
+    private static MethodSpec buildLockableContractDeployWithParams(
+            MethodSpec.Builder methodBuilder,
+            String className,
+            String inputParams,
+            String authName,
+            boolean isPayable,
+            boolean withGasProvider,
+            boolean withSubordinateTransactionsAndViews) {
+
+        if (!withSubordinateTransactionsAndViews) {
+            methodBuilder.addStatement(
+                    "$T $L = null",
+                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+        }
+        methodBuilder.addStatement(
+                "$T encodedConstructor = $T.encodeConstructor($T.<$T>asList($L))",
+                String.class,
+                FunctionEncoder.class,
+                Arrays.class,
+                Type.class,
+                inputParams);
+        if (isPayable && !withGasProvider) {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall("
+                            + "$L.class, $L, $L, $L, $L, $L, encodedConstructor, $L, $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    GAS_PRICE,
+                    GAS_LIMIT,
+                    BINARY,
+                    INITIAL_VALUE,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+            methodBuilder.addAnnotation(Deprecated.class);
+        } else if (isPayable && withGasProvider) {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall("
+                            + "$L.class, $L, $L, $L, $L, encodedConstructor, $L, $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    CONTRACT_GAS_PROVIDER,
+                    BINARY,
+                    INITIAL_VALUE,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+        } else if (!isPayable && !withGasProvider) {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, $L, encodedConstructor, $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    GAS_PRICE,
+                    GAS_LIMIT,
+                    BINARY,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+            methodBuilder.addAnnotation(Deprecated.class);
+        } else {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, encodedConstructor, $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    CONTRACT_GAS_PROVIDER,
+                    BINARY,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+        }
+
+        return methodBuilder.build();
+    }
+
+    private static MethodSpec buildLockableContractDeployNoParams(
+            MethodSpec.Builder methodBuilder,
+            String className,
+            String authName,
+            boolean isPayable,
+            boolean withGasProvider,
+            boolean withSubordinateTransactionsAndViews) {
+        if (!withSubordinateTransactionsAndViews) {
+            methodBuilder.addStatement(
+                    "$T $L = null",
+                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+        }
+        if (isPayable && !withGasProvider) {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, $L, \"\", $L, $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    GAS_PRICE,
+                    GAS_LIMIT,
+                    BINARY,
+                    INITIAL_VALUE,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+            methodBuilder.addAnnotation(Deprecated.class);
+        } else if (isPayable && withGasProvider) {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, \"\", $L, $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    CONTRACT_GAS_PROVIDER,
+                    BINARY,
+                    INITIAL_VALUE,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+        } else if (!isPayable && !withGasProvider) {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, $L, \"\", $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    GAS_PRICE,
+                    GAS_LIMIT,
+                    BINARY,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+            methodBuilder.addAnnotation(Deprecated.class);
+        } else {
+            methodBuilder.addStatement(
+                    "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, \"\", $L)",
+                    className,
+                    WEB3J,
+                    authName,
+                    CONTRACT_GAS_PROVIDER,
+                    BINARY,
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+        }
+
+        return methodBuilder.build();
+    }
     //
     //    private static MethodSpec.Builder getDeployMethodSpec(
     //            String className,
