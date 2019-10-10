@@ -1,53 +1,78 @@
-image: gradle:alpine
+image: gradle:4.10.2
 
 variables:
-  MAVEN_CLI_OPTS: "-s .m2/settings.xml --batch-mode"
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
 
 before_script:
-- export GRADLE_USER_HOME=`pwd`/.gradle
+  - export GRADLE_USER_HOME=`pwd`/.gradle
 
 cache:
   paths:
-  - .m2/repository/
-  - target/
+    - .gradle/wrapper
 
 stages:
 - build
-- test
-- deploy
+- release
+- publish
+- downstream
 
-build:
+build-version:
   stage: build
   script:
-  - ./gradlew clean build -x test
-
-unit tests:
-  stage: test
-  script:
-  - ./gradlew test
-
-publish_snapshot:
-  stage: deploy
-  script:
-  - ./gradlew clean release -x test
-
-  environment:
-    name: publish_snapshot
-  when: manual
+    - ./gradlew check
+  artifacts:
+    paths:
+      - scripts/
+      - build/libs/
   only:
-  - /release/.*$/
+    refs:
+      - /^release\/(\d*).(\d*).(\d*)/
 
-publish_release:
-  stage: deploy
+release-version:
+  variables:
+    OSSRH_REPO_URL: $RELEASE_OSSRH_REPO_URL
+  stage: release
+  allow_failure: true
   script:
-  - ./gradlew clean release -x test
-
-  environment:
-    name: publish_release
-  when: manual
+  - ./gradlew -Pversion=${CI_COMMIT_REF_NAME//release\/} release
   only:
-  - /release/.*$/
-  - master
+    refs:
+      - /^release\/(\d*).(\d*).(\d*)/
+
+release-github:
+  stage: publish
+  script:
+    - ./scripts/release-github.sh
+  only:
+    refs:
+      - /^release\/(\d*).(\d*).(\d*)/
+
+release-homebrew:
+  stage: downstream
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - ./scripts/update-homebrew.sh
+  only:
+    refs:
+      - /^release\/(\d*).(\d*).(\d*)/
+      
+release-aur:
+  stage: downstream
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - ./scripts/update-aur.sh
+  only:
+    refs:
+      - /^release\/(\d*).(\d*).(\d*)/
+
+release-quorum:
+  stage: downstream
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - ./scripts/build-dependant.sh quorum
+  only:
+    refs:
+      - /^release\/(\d*).(\d*).(\d*)/

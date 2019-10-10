@@ -1,0 +1,11 @@
+
+description 'web3j project code generators for besu'
+
+dependencies {
+    compile project(':codegen'),
+            project(':besu')
+    testCompile project(path: ':codegen', configuration: 'testArtifacts')
+}
+
+apply plugin: 'application'
+application { mainClassName = 'org.web3j.codegen.CrosschainSolidityFunctionWrapperGenerator' }
