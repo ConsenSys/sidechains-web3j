@@ -41,7 +41,7 @@ import static org.web3j.codegen.SolidityFunctionWrapperGenerator.getFileNameNoEx
 
 public class SolidityFunctionWrapperGeneratorTest extends TempFileProvider {
 
-    private String solidityBaseDir;
+    protected String solidityBaseDir;
 
     @Override
     public void setUp() throws Exception {
@@ -223,7 +223,7 @@ public class SolidityFunctionWrapperGeneratorTest extends TempFileProvider {
             options.add(PRIMITIVE_TYPES_ARG);
         }
 
-        SolidityFunctionWrapperGenerator.main(options.toArray(new String[options.size()]));
+        executeMain(options);
 
         verifyGeneratedCode(
                 tempDirPath
@@ -232,6 +232,10 @@ public class SolidityFunctionWrapperGeneratorTest extends TempFileProvider {
                         + File.separator
                         + Strings.capitaliseFirstLetter(inputFileName)
                         + ".java");
+    }
+
+    protected void executeMain(final List<String> options) {
+        SolidityFunctionWrapperGenerator.main(options.toArray(new String[options.size()]));
     }
 
     private void verifyGeneratedCode(String sourceFile) throws IOException {

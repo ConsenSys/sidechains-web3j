@@ -10,7 +10,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package org.web3j.protocol.besu.response.crosschain;
+package org.web3j.codegen;
 /*
  * Copyright 2019 ConsenSys AG.
  *
@@ -24,11 +24,24 @@ package org.web3j.protocol.besu.response.crosschain;
  * specific language governing permissions and limitations under the License.
  */
 
-import org.web3j.protocol.core.Response;
+import java.net.URL;
+import java.util.List;
 
-public class CrosschainProcessSubordinateView extends Response<String> {
+public class CrosschainSolidityFunctionWrapperGeneratorTest
+        extends SolidityFunctionWrapperGeneratorTest {
 
-    public String getValue() {
-        return getResult();
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+
+        URL url =
+                CrosschainSolidityFunctionWrapperGeneratorTest.class
+                        .getClass()
+                        .getResource("/solidity");
+        this.solidityBaseDir = url.getPath();
+    }
+
+    protected void executeMain(final List<String> options) {
+        SolidityFunctionWrapperGenerator.main(options.toArray(new String[options.size()]));
     }
 }

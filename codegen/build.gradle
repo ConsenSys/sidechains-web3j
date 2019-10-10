@@ -7,3 +7,8 @@ dependencies {
             "info.picocli:picocli:$picocliVersion"
     testCompile project(path: ':core', configuration: 'testArtifacts')
 }
+
+
+configurations { testArtifacts.extendsFrom testRuntime }
+
+artifacts { testArtifacts testJar }
