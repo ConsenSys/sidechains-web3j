@@ -32,13 +32,25 @@ import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.ens.EnsResolver;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.besu.Besu;
 import org.web3j.protocol.core.RemoteCall;
+import org.web3j.protocol.core.RemoteFunctionCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.tx.gas.ContractGasProvider;
+import org.web3j.tx.gas.StaticGasProvider;
 
 public abstract class CrosschainContract extends Contract {
-    CrosschainTransactionManager crosschainTransactionManager;
+    @Deprecated
+    protected CrosschainContract(
+            String contractBinary,
+            String contractAddress,
+            Besu besu,
+            CrosschainTransactionManager transactionManager,
+            BigInteger gasPrice,
+            BigInteger gasLimit) {
+        super(contractBinary, contractAddress, besu, transactionManager, gasPrice, gasLimit);
+    }
 
     protected CrosschainContract(
             String contractBinary,
@@ -67,13 +79,14 @@ public abstract class CrosschainContract extends Contract {
         BigInteger gasPrice = this.gasProvider.getGasPrice(method);
         BigInteger gasLimit = this.gasProvider.getGasLimit(method);
 
-        return this.crosschainTransactionManager.createSignedSubordinateView(
-                gasPrice,
-                gasLimit,
-                contractAddress,
-                FunctionEncoder.encode(function),
-                weiValue,
-                nestedSubordinateViews);
+        return ((CrosschainTransactionManager) this.transactionManager)
+                .createSignedSubordinateView(
+                        gasPrice,
+                        gasLimit,
+                        contractAddress,
+                        FunctionEncoder.encode(function),
+                        weiValue,
+                        nestedSubordinateViews);
     }
 
     protected byte[] createSignedSubordinateTransaction(
@@ -83,16 +96,24 @@ public abstract class CrosschainContract extends Contract {
         BigInteger gasPrice = this.gasProvider.getGasPrice(method);
         BigInteger gasLimit = this.gasProvider.getGasLimit(method);
 
-        return this.crosschainTransactionManager.createSignedSubordinateTransaction(
-                gasPrice,
-                gasLimit,
-                contractAddress,
-                FunctionEncoder.encode(function),
-                weiValue,
-                nestedSubordinateTransactionsAndViews);
+        return ((CrosschainTransactionManager) this.transactionManager)
+                .createSignedSubordinateTransaction(
+                        gasPrice,
+                        gasLimit,
+                        contractAddress,
+                        FunctionEncoder.encode(function),
+                        weiValue,
+                        nestedSubordinateTransactionsAndViews);
     }
 
-    public TransactionReceipt executeCrossChainTransaction(
+    protected RemoteFunctionCall<TransactionReceipt> executeRemoteCallCrosschainTransaction(
+            Function function, byte[][] subordinateTransactionsAndViews) {
+        return new RemoteFunctionCall<>(
+                function,
+                () -> executeCrossChainTransaction(function, subordinateTransactionsAndViews));
+    }
+
+    protected TransactionReceipt executeCrossChainTransaction(
             Function function, byte[][] subordinateTransactionsAndViews)
             throws TransactionException, IOException {
         String method = function.getName();
@@ -100,62 +121,17 @@ public abstract class CrosschainContract extends Contract {
         BigInteger gasPrice = this.gasProvider.getGasPrice(method);
         BigInteger gasLimit = this.gasProvider.getGasLimit(method);
 
-        return this.crosschainTransactionManager.executeCrosschainTransaction(
-                gasPrice,
-                gasLimit,
-                contractAddress,
-                FunctionEncoder.encode(function),
-                weiValue,
-                subordinateTransactionsAndViews);
+        return ((CrosschainTransactionManager) this.transactionManager)
+                .executeCrosschainTransaction(
+                        gasPrice,
+                        gasLimit,
+                        contractAddress,
+                        FunctionEncoder.encode(function),
+                        weiValue,
+                        subordinateTransactionsAndViews);
     }
 
-    //
-    //    public byte[] getAsSignedLockableContractDeploy(byte[][] subordinateTransactionsAndViews)
-    //            throws IOException {
-    //
-    //        // TODO I don't know what a contract with a constructor, which might take parameters,
-    // is
-    //        // supposed to look like.
-    //        // As such, for the moment, have no constructor.
-    //        //        final Function constructor = new Function(
-    //        //                "init",
-    //        //                Arrays.asList(constructorParams),
-    //        //                Collections.<TypeReference<?>>emptyList());
-    //
-    //        String method = "deploy";
-    //        BigInteger weiValue = BigInteger.ZERO;
-    //        BigInteger gasPrice = contractGasProvider.getGasPrice(method);
-    //        BigInteger gasLimit = contractGasProvider.getGasLimit(method);
-    //
-    //        return transactionManager.createSignedSubordinateDeployLockable(
-    //                gasPrice,
-    //                gasLimit,
-    //                this.contractBinary // + FunctionEncoder.encode(constructor)
-    //                ,
-    //                weiValue,
-    //                subordinateTransactionsAndViews);
-    //    }
-    //
-    //
-    public static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
-            Class<T> type,
-            Web3j web3j,
-            CrosschainTransactionManager transactionManager,
-            ContractGasProvider contractGasProvider,
-            String binary,
-            String encodedConstructor) {
-        return deployLockableRemoteCall(
-                type,
-                web3j,
-                transactionManager,
-                contractGasProvider,
-                binary,
-                encodedConstructor,
-                BigInteger.ZERO,
-                null);
-    }
-
-    public static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
             Class<T> type,
             Web3j web3j,
             CrosschainTransactionManager transactionManager,
@@ -174,24 +150,7 @@ public abstract class CrosschainContract extends Contract {
                 subordinateTransactionsAndViews);
     }
 
-    public static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
-            Class<T> type,
-            Web3j web3j,
-            CrosschainTransactionManager transactionManager,
-            ContractGasProvider contractGasProvider,
-            String binary) {
-        return deployLockableRemoteCall(
-                type,
-                web3j,
-                transactionManager,
-                contractGasProvider,
-                binary,
-                "",
-                BigInteger.ZERO,
-                null);
-    }
-
-    public static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
             Class<T> type,
             Web3j web3j,
             CrosschainTransactionManager transactionManager,
@@ -209,7 +168,46 @@ public abstract class CrosschainContract extends Contract {
                 subordinateTransactionsAndViews);
     }
 
-    public static <T extends Contract> RemoteCall<T> deployLockableRemoteCall(
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+            Class<T> type,
+            Web3j web3j,
+            CrosschainTransactionManager transactionManager,
+            BigInteger gasPrice,
+            BigInteger gasLimit,
+            String binary,
+            String encodedConstructor,
+            byte[][] subordinateTransactionsAndViews) {
+        return deployLockableRemoteCall(
+                type,
+                web3j,
+                transactionManager,
+                new StaticGasProvider(gasPrice, gasLimit),
+                binary,
+                encodedConstructor,
+                BigInteger.ZERO,
+                subordinateTransactionsAndViews);
+    }
+
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+            Class<T> type,
+            Web3j web3j,
+            CrosschainTransactionManager transactionManager,
+            BigInteger gasPrice,
+            BigInteger gasLimit,
+            String binary,
+            byte[][] subordinateTransactionsAndViews) {
+        return deployLockableRemoteCall(
+                type,
+                web3j,
+                transactionManager,
+                new StaticGasProvider(gasPrice, gasLimit),
+                binary,
+                "",
+                BigInteger.ZERO,
+                subordinateTransactionsAndViews);
+    }
+
+    protected static <T extends Contract> RemoteCall<T> deployLockableRemoteCall(
             Class<T> type,
             Web3j web3j,
             CrosschainTransactionManager transactionManager,
@@ -230,7 +228,7 @@ public abstract class CrosschainContract extends Contract {
                                 null));
     }
 
-    public static <T extends Contract> RemoteCall<T> deployLockableRemoteCall(
+    protected static <T extends Contract> RemoteCall<T> deployLockableRemoteCall(
             Class<T> type,
             Web3j web3j,
             CrosschainTransactionManager transactionManager,
@@ -267,8 +265,8 @@ public abstract class CrosschainContract extends Contract {
             Constructor<T> constructor =
                     type.getDeclaredConstructor(
                             String.class,
-                            Web3j.class,
-                            TransactionManager.class,
+                            Besu.class,
+                            CrosschainTransactionManager.class,
                             ContractGasProvider.class);
             constructor.setAccessible(true);
 
@@ -278,7 +276,6 @@ public abstract class CrosschainContract extends Contract {
 
             return create(
                     contract,
-                    transactionManager,
                     contractGasProvider,
                     binary,
                     encodedConstructor,
@@ -293,7 +290,6 @@ public abstract class CrosschainContract extends Contract {
 
     private static <T extends Contract> T create(
             T contract,
-            CrosschainTransactionManager transactionManager,
             ContractGasProvider contractGasProvider,
             String binary,
             String encodedConstructor,
@@ -309,8 +305,9 @@ public abstract class CrosschainContract extends Contract {
         // Note: use the "to" parameter from her on to ensure not too many changes needed when
         // merging this code with Web3J
         TransactionReceipt transactionReceipt =
-                transactionManager.executeLockableContractDeploy(
-                        gasPrice, gasLimit, data, value, subordinateTransactionsAndViews);
+                ((CrosschainTransactionManager) contract.transactionManager)
+                        .executeLockableContractDeploy(
+                                gasPrice, gasLimit, data, value, subordinateTransactionsAndViews);
 
         String contractAddress = transactionReceipt.getContractAddress();
         if (contractAddress == null) {

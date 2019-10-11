@@ -46,7 +46,6 @@ import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.crypto.Credentials;
 import org.web3j.protocol.besu.Besu;
 import org.web3j.protocol.core.methods.response.AbiDefinition;
 import org.web3j.protocol.core.methods.response.Log;
@@ -63,6 +62,16 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
     private static final String CROSSCHAIN_TRANSACTION_MANAGER = "crosschainTransactionManager";
     private static final String SUBORDINATE_TRANSACTIONS_AND_VIEWS =
             "nestedSubordinateTransactionsAndViews";
+    private static final String SUBORDINATE_VIEWS = "nestedSubordinateViews";
+
+    private static final String CODEGEN_WARNING =
+            "<p>Auto generated code.\n"
+                    + "<p><strong>Do not modify!</strong>\n"
+                    + "<p>Please use the "
+                    + CrosschainSolidityFunctionWrapperGenerator.class.getName()
+                    + " in the \n"
+                    + "<a href=\"https://github.com/PegaSysEng/sidechains-web3j/tree/master/besucodegen\">"
+                    + "codegen module</a> to update.\n";
 
     private static final ClassName LOG = ClassName.get(Log.class);
     private static final Logger LOGGER =
@@ -121,8 +130,6 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                         .addMember("value", "\"rawtypes\"")
                         .build());
 
-        classBuilder.addMethod(buildConstructor(Credentials.class, CREDENTIALS, false));
-        classBuilder.addMethod(buildConstructor(Credentials.class, CREDENTIALS, true));
         classBuilder.addMethod(
                 buildConstructor(
                         this.transactionManagerClass, this.transactoinManagerVariableName, false));
@@ -134,14 +141,12 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
         // Build the functions for transactions, views, and events.
         classBuilder.addMethods(buildFunctionDefinitions(className, classBuilder, abi));
 
-        classBuilder.addMethod(buildLoad(className, Credentials.class, CREDENTIALS, false));
         classBuilder.addMethod(
                 buildLoad(
                         className,
                         this.transactionManagerClass,
                         this.transactoinManagerVariableName,
                         false));
-        classBuilder.addMethod(buildLoad(className, Credentials.class, CREDENTIALS, true));
         classBuilder.addMethod(
                 buildLoad(
                         className,
@@ -155,6 +160,18 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
         addAddressesSupport(classBuilder, addresses);
 
         write(basePackageName, classBuilder.build(), destinationDir);
+    }
+
+    protected TypeSpec.Builder createClassBuilder(
+            Class<? extends Contract> contractClass, String className, String binary) {
+
+        String javadoc = CODEGEN_WARNING + getWeb3jVersion();
+
+        return TypeSpec.classBuilder(className)
+                .addModifiers(Modifier.PUBLIC)
+                .addJavadoc(javadoc)
+                .superclass(contractClass)
+                .addField(createBinaryDefinition(binary));
     }
 
     List<MethodSpec> buildDeployMethods(
@@ -195,20 +212,16 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             boolean withSubordinateTransactionsAndViews)
             throws ClassNotFoundException {
 
+        Class transactionManagerClass =
+                lockableContractDeploy
+                        ? CrosschainTransactionManager.class
+                        : TransactionManager.class;
+
         methodSpecs.add(
                 buildDeploy(
                         className,
                         functionDefinition,
-                        Credentials.class,
-                        CREDENTIALS,
-                        true,
-                        lockableContractDeploy,
-                        withSubordinateTransactionsAndViews));
-        methodSpecs.add(
-                buildDeploy(
-                        className,
-                        functionDefinition,
-                        TransactionManager.class,
+                        transactionManagerClass,
                         TRANSACTION_MANAGER,
                         true,
                         lockableContractDeploy,
@@ -217,16 +230,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 buildDeploy(
                         className,
                         functionDefinition,
-                        Credentials.class,
-                        CREDENTIALS,
-                        false,
-                        lockableContractDeploy,
-                        withSubordinateTransactionsAndViews));
-        methodSpecs.add(
-                buildDeploy(
-                        className,
-                        functionDefinition,
-                        TransactionManager.class,
+                        transactionManagerClass,
                         TRANSACTION_MANAGER,
                         false,
                         lockableContractDeploy,
@@ -489,8 +493,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 // Add nested subordinate views as an additional parameter.
                 methodBuilder.addParameter(
                         ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                        "nestedSubordinateViews",
+                        SUBORDINATE_VIEWS,
                         Modifier.FINAL);
+                methodBuilder.addException(IOException.class);
                 buildConstantFunctionAsSubordinateView(
                         functionDefinition,
                         methodBuilder,
@@ -517,8 +522,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             // Add nested subordinate transactions and views as an additional parameter.
             methodBuilder.addParameter(
                     ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                    "nestedSubordinateTransactionsAndViews",
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS,
                     Modifier.FINAL);
+            methodBuilder.addException(IOException.class);
             buildTransactionFunctionAsSubordinateTransaction(
                     functionDefinition, methodBuilder, inputParams, useUpperCase);
             results.add(methodBuilder.build());
@@ -530,7 +536,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             // Add nested subordinate transactions and views as an additional parameter.
             methodBuilder.addParameter(
                     ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                    "nestedSubordinateTransactionsAndViews",
+                    SUBORDINATE_TRANSACTIONS_AND_VIEWS,
                     Modifier.FINAL);
             buildTransactionFunctionAsCrosschainTransaction(
                     functionDefinition, methodBuilder, inputParams, useUpperCase);
@@ -569,7 +575,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 typeName);
 
         methodBuilder.addStatement(
-                "return createSignedSubordinateView(function, nestedSubordinateTransactionsAndViews)");
+                "return createSignedSubordinateView(function, " + SUBORDINATE_VIEWS + ")");
     }
 
     private void buildTransactionFunctionAsSubordinateTransaction(
@@ -595,7 +601,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 TypeReference.class);
 
         methodBuilder.addStatement(
-                "return createSignedSubordinateTransaction(function, nestedSubordinateTransactionsAndViews)");
+                "return createSignedSubordinateTransaction(function, "
+                        + SUBORDINATE_TRANSACTIONS_AND_VIEWS
+                        + ")");
     }
 
     private void buildTransactionFunctionAsCrosschainTransaction(
@@ -620,6 +628,8 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 TypeReference.class);
 
         methodBuilder.addStatement(
-                "return executeCrossChainTransaction(function, nestedSubordinateTransactionsAndViews)");
+                "return executeRemoteCallCrosschainTransaction(function, "
+                        + SUBORDINATE_TRANSACTIONS_AND_VIEWS
+                        + ")");
     }
 }

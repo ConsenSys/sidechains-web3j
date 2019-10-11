@@ -320,7 +320,7 @@ public class SolidityFunctionWrapper extends Generator {
                 .addField(createBinaryDefinition(binary));
     }
 
-    private String getWeb3jVersion() {
+    protected String getWeb3jVersion() {
         String version;
 
         try {
@@ -333,7 +333,7 @@ public class SolidityFunctionWrapper extends Generator {
         return "\n<p>Generated with web3j version " + version + ".\n";
     }
 
-    private FieldSpec createBinaryDefinition(String binary) {
+    protected FieldSpec createBinaryDefinition(String binary) {
         return FieldSpec.builder(String.class, BINARY)
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
                 .initializer("$S", binary)
