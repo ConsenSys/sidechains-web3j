@@ -207,6 +207,86 @@ public abstract class CrosschainContract extends Contract {
                 subordinateTransactionsAndViews);
     }
 
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+            Class<T> type,
+            Web3j web3j,
+            CrosschainTransactionManager transactionManager,
+            ContractGasProvider contractGasProvider,
+            String binary,
+            String encodedConstructor,
+            BigInteger initialWeiValue,
+            byte[][] subordinateTransactionsAndViews) {
+        return deployLockableRemoteCall(
+                type,
+                web3j,
+                transactionManager,
+                contractGasProvider,
+                binary,
+                encodedConstructor,
+                initialWeiValue,
+                subordinateTransactionsAndViews);
+    }
+
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+            Class<T> type,
+            Web3j web3j,
+            CrosschainTransactionManager transactionManager,
+            ContractGasProvider contractGasProvider,
+            String binary,
+            BigInteger initialWeiValue,
+            byte[][] subordinateTransactionsAndViews) {
+        return deployLockableRemoteCall(
+                type,
+                web3j,
+                transactionManager,
+                contractGasProvider,
+                binary,
+                "",
+                initialWeiValue,
+                subordinateTransactionsAndViews);
+    }
+
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+            Class<T> type,
+            Web3j web3j,
+            CrosschainTransactionManager transactionManager,
+            BigInteger gasPrice,
+            BigInteger gasLimit,
+            String binary,
+            String encodedConstructor,
+            BigInteger initialWeiValue,
+            byte[][] subordinateTransactionsAndViews) {
+        return deployLockableRemoteCall(
+                type,
+                web3j,
+                transactionManager,
+                new StaticGasProvider(gasPrice, gasLimit),
+                binary,
+                encodedConstructor,
+                initialWeiValue,
+                subordinateTransactionsAndViews);
+    }
+
+    protected static <T extends Contract> RemoteCall<T> deployLockableContractRemoteCall(
+            Class<T> type,
+            Web3j web3j,
+            CrosschainTransactionManager transactionManager,
+            BigInteger gasPrice,
+            BigInteger gasLimit,
+            String binary,
+            BigInteger initialWeiValue,
+            byte[][] subordinateTransactionsAndViews) {
+        return deployLockableRemoteCall(
+                type,
+                web3j,
+                transactionManager,
+                new StaticGasProvider(gasPrice, gasLimit),
+                binary,
+                "",
+                initialWeiValue,
+                subordinateTransactionsAndViews);
+    }
+
     protected static <T extends Contract> RemoteCall<T> deployLockableRemoteCall(
             Class<T> type,
             Web3j web3j,
