@@ -240,6 +240,12 @@ public class CrosschainSolidityFunctionWrapperGenerator extends FunctionWrapperG
                 required = false)
         private boolean primitiveTypes = false;
 
+        @Option(
+                names = {"-cc", CROSSCHAIN_ARG},
+                description = "generate a lockable contract for crosschain.",
+                required = false)
+        private boolean crosschain = false;
+
         @Override
         public void run() {
             try {
@@ -251,16 +257,29 @@ public class CrosschainSolidityFunctionWrapperGenerator extends FunctionWrapperG
                     contractName = getFileNameNoExtension(abiFile.getName());
                 }
 
-                new CrosschainSolidityFunctionWrapperGenerator(
-                                binFile,
-                                abiFile,
-                                destinationFileDir,
-                                contractName,
-                                packageName,
-                                useJavaTypes,
-                                primitiveTypes,
-                                addressLength)
-                        .generate();
+                if (crosschain) {
+                    new CrosschainSolidityFunctionWrapperGenerator(
+                                    binFile,
+                                    abiFile,
+                                    destinationFileDir,
+                                    contractName,
+                                    packageName,
+                                    useJavaTypes,
+                                    primitiveTypes,
+                                    addressLength)
+                            .generate();
+                } else {
+                    new SolidityFunctionWrapperGenerator(
+                                    binFile,
+                                    abiFile,
+                                    destinationFileDir,
+                                    contractName,
+                                    packageName,
+                                    useJavaTypes,
+                                    primitiveTypes,
+                                    addressLength)
+                            .generate();
+                }
             } catch (Exception e) {
                 exitError(e);
             }

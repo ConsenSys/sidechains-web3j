@@ -184,7 +184,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
         for (AbiDefinition functionDefinition : functionDefinitions) {
             if (functionDefinition.getType().equals("constructor")) {
                 constructor = true;
-                buildDeployMethods(methodSpecs, className, functionDefinition, false, false);
+                // buildDeployMethods(methodSpecs, className, functionDefinition, false, false);
                 buildDeployMethods(methodSpecs, className, functionDefinition, true, false);
                 buildDeployMethods(methodSpecs, className, functionDefinition, true, true);
 
@@ -194,7 +194,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
 
         // constructor will not be specified in ABI file if its empty
         if (!constructor) {
-            buildDeployMethods(methodSpecs, className, null, false, false);
+            // buildDeployMethods(methodSpecs, className, null, false, false);
             buildDeployMethods(methodSpecs, className, null, true, false);
             buildDeployMethods(methodSpecs, className, null, true, true);
 

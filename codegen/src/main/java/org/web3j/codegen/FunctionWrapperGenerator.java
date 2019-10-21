@@ -25,6 +25,7 @@ abstract class FunctionWrapperGenerator {
     static final String JAVA_TYPES_ARG = "--javaTypes";
     static final String SOLIDITY_TYPES_ARG = "--solidityTypes";
     static final String PRIMITIVE_TYPES_ARG = "--primitiveTypes";
+    static final String CROSSCHAIN_ARG = "--crosschain";
 
     final File destinationDirLocation;
     final String basePackageName;
