@@ -42,6 +42,10 @@ public interface Besu extends Eea {
         return new JsonRpc2_0Besu(web3jService);
     }
 
+    static Besu build(Web3jService web3jService, long pollingInterval) {
+        return new JsonRpc2_0Besu(web3jService, pollingInterval);
+    }
+
     Request<?, MinerStartResponse> minerStart();
 
     Request<?, BooleanResponse> minerStop();

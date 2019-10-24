@@ -47,6 +47,10 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
         super(web3jService);
     }
 
+    public JsonRpc2_0Besu(Web3jService web3jService, long pollingInterval) {
+        super(web3jService, pollingInterval);
+    }
+
     @Override
     public Request<?, MinerStartResponse> minerStart() {
         return new Request<>(
