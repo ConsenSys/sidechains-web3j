@@ -25,6 +25,7 @@ package org.web3j.codegen;
  */
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -583,6 +584,12 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             MethodSpec.Builder methodBuilder,
             String inputParams,
             boolean useUpperCase) {
+        String weiParam = "";
+        if (functionDefinition.isPayable()) {
+            methodBuilder.addParameter(BigInteger.class, WEI_VALUE);
+            weiParam = ", " + WEI_VALUE;
+        }
+
         String functionName = functionDefinition.getName();
 
         // Return the byte array representing the signed transaction
@@ -603,6 +610,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
         methodBuilder.addStatement(
                 "return createSignedSubordinateTransaction(function, "
                         + SUBORDINATE_TRANSACTIONS_AND_VIEWS
+                        + weiParam
                         + ")");
     }
 
@@ -611,6 +619,12 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             MethodSpec.Builder methodBuilder,
             String inputParams,
             boolean useUpperCase) {
+        String weiParam = "";
+        if (functionDefinition.isPayable()) {
+            methodBuilder.addParameter(BigInteger.class, WEI_VALUE);
+            weiParam = ", " + WEI_VALUE;
+        }
+
         String functionName = functionDefinition.getName();
 
         methodBuilder.returns(buildRemoteFunctionCall(TypeName.get(TransactionReceipt.class)));
@@ -630,6 +644,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
         methodBuilder.addStatement(
                 "return executeRemoteCallCrosschainTransaction(function, "
                         + SUBORDINATE_TRANSACTIONS_AND_VIEWS
+                        + weiParam
                         + ")");
     }
 }
