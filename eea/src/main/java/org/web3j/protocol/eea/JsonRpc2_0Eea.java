@@ -18,10 +18,15 @@ import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.JsonRpc2_0Web3j;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
+import org.web3j.utils.Async;
 
 public class JsonRpc2_0Eea extends JsonRpc2_0Web3j implements Eea {
     public JsonRpc2_0Eea(Web3jService web3jService) {
         super(web3jService);
+    }
+
+    public JsonRpc2_0Eea(Web3jService web3jService, long pollingInterval) {
+        super(web3jService, pollingInterval, Async.defaultExecutorService());
     }
 
     @Override
