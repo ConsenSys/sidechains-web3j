@@ -91,8 +91,14 @@ public abstract class CrosschainContract extends Contract {
 
     protected byte[] createSignedSubordinateTransaction(
             Function function, byte[][] nestedSubordinateTransactionsAndViews) throws IOException {
+        return createSignedSubordinateTransaction(
+                function, nestedSubordinateTransactionsAndViews, BigInteger.ZERO);
+    }
+
+    protected byte[] createSignedSubordinateTransaction(
+            Function function, byte[][] nestedSubordinateTransactionsAndViews, BigInteger weiValue)
+            throws IOException {
         String method = function.getName();
-        BigInteger weiValue = BigInteger.ZERO;
         BigInteger gasPrice = this.gasProvider.getGasPrice(method);
         BigInteger gasLimit = this.gasProvider.getGasLimit(method);
 
@@ -108,16 +114,23 @@ public abstract class CrosschainContract extends Contract {
 
     protected RemoteFunctionCall<TransactionReceipt> executeRemoteCallCrosschainTransaction(
             Function function, byte[][] subordinateTransactionsAndViews) {
+        return executeRemoteCallCrosschainTransaction(
+                function, subordinateTransactionsAndViews, BigInteger.ZERO);
+    }
+
+    protected RemoteFunctionCall<TransactionReceipt> executeRemoteCallCrosschainTransaction(
+            Function function, byte[][] subordinateTransactionsAndViews, BigInteger weiValue) {
         return new RemoteFunctionCall<>(
                 function,
-                () -> executeCrossChainTransaction(function, subordinateTransactionsAndViews));
+                () ->
+                        executeCrossChainTransaction(
+                                function, subordinateTransactionsAndViews, weiValue));
     }
 
     protected TransactionReceipt executeCrossChainTransaction(
-            Function function, byte[][] subordinateTransactionsAndViews)
+            Function function, byte[][] subordinateTransactionsAndViews, BigInteger weiValue)
             throws TransactionException, IOException {
         String method = function.getName();
-        BigInteger weiValue = BigInteger.ZERO;
         BigInteger gasPrice = this.gasProvider.getGasPrice(method);
         BigInteger gasLimit = this.gasProvider.getGasLimit(method);
 
