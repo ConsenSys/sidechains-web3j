@@ -92,7 +92,7 @@ public class SolidityFunctionWrapper extends Generator {
     private static final String FILTER = "filter";
     private static final String START_BLOCK = "startBlock";
     private static final String END_BLOCK = "endBlock";
-    private static final String WEI_VALUE = "weiValue";
+    protected static final String WEI_VALUE = "weiValue";
     private static final String FUNC_NAME_PREFIX = "FUNC_";
     private static final String TYPE_FUNCTION = "function";
     private static final String TYPE_EVENT = "event";
