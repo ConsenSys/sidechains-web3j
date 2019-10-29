@@ -94,7 +94,7 @@ public class TransactionEncoder {
         return RlpEncoder.encode(rlpList);
     }
 
-    private static byte[] longToBytes(long x) {
+    public static byte[] longToBytes(long x) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         buffer.putLong(x);
         return buffer.array();
