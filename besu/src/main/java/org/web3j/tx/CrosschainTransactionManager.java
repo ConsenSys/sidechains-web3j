@@ -50,35 +50,56 @@ import org.web3j.utils.Numeric;
 public class CrosschainTransactionManager extends RawTransactionManager {
     private final Besu besu;
     private final Credentials credentials;
-    private final long chainId;
+    private final BigInteger chainId;
+    private final BigInteger crosschainCoordinationBlockchainId;
+    private final String crosschainCoordinationContractAddress;
+    private final BigInteger crosschainTimeoutBlockNumber;
 
     public CrosschainTransactionManager(
             final Besu besu,
             final Credentials credentials,
-            final long chainId,
-            final TransactionReceiptProcessor transactionReceiptProcessor) {
-        super(besu, credentials, chainId, transactionReceiptProcessor);
+            final BigInteger chainId,
+            final TransactionReceiptProcessor transactionReceiptProcessor,
+            final BigInteger crosschainCoordinationBlockchainId,
+            final String crosschainCoordinationContractAddress,
+            final BigInteger crosschainTimeoutBlockNumber) {
+        super(besu, credentials, chainId.longValue(), transactionReceiptProcessor);
         this.besu = besu;
         this.credentials = credentials;
         this.chainId = chainId;
+        this.crosschainCoordinationBlockchainId = crosschainCoordinationBlockchainId;
+        this.crosschainCoordinationContractAddress = crosschainCoordinationContractAddress;
+        this.crosschainTimeoutBlockNumber = crosschainTimeoutBlockNumber;
     }
 
     public CrosschainTransactionManager(
             final Besu besu,
             final Credentials credentials,
-            final long chainId,
+            final BigInteger chainId,
             final int attempts,
-            final int sleepDuration) {
+            final long sleepDuration,
+            final BigInteger crosschainCoordinationBlockchainId,
+            final String crosschainCoordinationContractAddress,
+            final BigInteger crosschainTimeoutBlockNumber) {
         this(
                 besu,
                 credentials,
                 chainId,
-                new PollingTransactionReceiptProcessor(besu, attempts, sleepDuration));
+                new PollingTransactionReceiptProcessor(besu, sleepDuration, attempts),
+                crosschainCoordinationBlockchainId,
+                crosschainCoordinationContractAddress,
+                crosschainTimeoutBlockNumber);
     }
 
     public CrosschainTransactionManager(
-            final Besu besu, final Credentials credentials, final long chainId) {
-        this(besu, credentials, chainId, DEFAULT_POLLING_ATTEMPTS_PER_TX_HASH, 15 * 1000);
+            final Besu besu, final Credentials credentials, final BigInteger chainId,
+            final BigInteger crosschainCoordinationBlockchainId,
+            final String crosschainCoordinationContractAddress,
+            final BigInteger crosschainTimeoutBlockNumber) {
+        this(besu, credentials, chainId, DEFAULT_POLLING_ATTEMPTS_PER_TX_HASH, DEFAULT_POLLING_FREQUENCY,
+            crosschainCoordinationBlockchainId,
+            crosschainCoordinationContractAddress,
+            crosschainTimeoutBlockNumber);
     }
 
     private byte[] createSignedCrosschainTransaction(
@@ -103,7 +124,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
                         data,
                         subordinateTransactionsAndViews);
 
-        return CrosschainTransactionEncoder.signMessage(rawCrossChainTx, chainId, credentials);
+        return CrosschainTransactionEncoder.signMessage(rawCrossChainTx, chainId.longValue(), credentials);
     }
 
     public byte[] createSignedSubordinateTransaction(
