@@ -27,11 +27,12 @@ package org.web3j.protocol.besu.crypto.crosschain;
 import java.math.BigInteger;
 
 import org.web3j.crypto.RawTransaction;
+import org.web3j.tx.CrosschainContext;
 
 public class CrosschainRawTransaction extends RawTransaction {
 
     CrosschainTransactionType type;
-    byte[][] subordinateTransactionsAndViews;
+    CrosschainContext crosschainContext;
 
     public CrosschainRawTransaction(
             CrosschainTransactionType type,
@@ -41,15 +42,10 @@ public class CrosschainRawTransaction extends RawTransaction {
             String to,
             BigInteger value,
             String data,
-            byte[][] subordinateTxOrView) {
+            CrosschainContext crosschainContext) {
         super(nonce, gasPrice, gasLimit, to, value, data);
         this.type = type;
-        this.subordinateTransactionsAndViews = subordinateTxOrView;
-
-        // enforce empty array over null variable
-        if (this.subordinateTransactionsAndViews == null) {
-            this.subordinateTransactionsAndViews = new byte[][] {};
-        }
+        this.crosschainContext = crosschainContext;
     }
 
     public static CrosschainRawTransaction createTransaction(
@@ -60,14 +56,14 @@ public class CrosschainRawTransaction extends RawTransaction {
             String to,
             BigInteger value,
             String data,
-            byte[][] subordinateTransactionsAndViews) {
+            CrosschainContext crosschainContext) {
 
         return new CrosschainRawTransaction(
-                type, nonce, gasPrice, gasLimit, to, value, data, subordinateTransactionsAndViews);
+                type, nonce, gasPrice, gasLimit, to, value, data, crosschainContext);
     }
 
-    public byte[][] getSubordinateTxAndViews() {
-        return this.subordinateTransactionsAndViews;
+    public CrosschainContext getCrosschainContext() {
+        return this.crosschainContext;
     }
 
     public int getType() {

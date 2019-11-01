@@ -24,23 +24,25 @@ package org.web3j.tx;
  * specific language governing permissions and limitations under the License.
  */
 
-
 import java.math.BigInteger;
 
 public class CrosschainContext {
+    private BigInteger crosschainCoordinationBlockchainId;
+    private String crosschainCoordinationContractAddress;
+    private BigInteger crosschainTimeoutBlockNumber;
+
     private final BigInteger crosschainTransactionId;
     private final BigInteger originatingSidechainId;
     private final BigInteger fromSidechainId;
     private final String fromAddress;
     private final byte[][] subordinateTransactionsAndViews;
 
-
-    public CrosschainContext(
-        final BigInteger crosschainTransactionId,
-        final BigInteger originatingSidechainId,
-        final BigInteger fromSidechainId,
-        final String fromAddress,
-        final byte[][] subordinateTransactionsAndViews) {
+    CrosschainContext(
+            final BigInteger crosschainTransactionId,
+            final BigInteger originatingSidechainId,
+            final BigInteger fromSidechainId,
+            final String fromAddress,
+            final byte[][] subordinateTransactionsAndViews) {
         this.crosschainTransactionId = crosschainTransactionId;
         this.originatingSidechainId = originatingSidechainId;
         this.fromSidechainId = fromSidechainId;
@@ -48,13 +50,26 @@ public class CrosschainContext {
         this.subordinateTransactionsAndViews = subordinateTransactionsAndViews;
     }
 
-    public CrosschainContext(
-        final BigInteger crosschainTransactionId,
-        final BigInteger originatingSidechainId,
-        final byte[][] subordinateTransactionsAndViews) {
-        this(crosschainTransactionId, originatingSidechainId, null, null, subordinateTransactionsAndViews);
+    CrosschainContext(
+            final BigInteger crosschainTransactionId,
+            final BigInteger originatingSidechainId,
+            final byte[][] subordinateTransactionsAndViews) {
+        this(
+                crosschainTransactionId,
+                originatingSidechainId,
+                null,
+                null,
+                subordinateTransactionsAndViews);
     }
 
+    public void addCoordinationInformation(
+            final BigInteger crosschainCoordinationBlockchainId,
+            final String crosschainCoordinationContractAddress,
+            final BigInteger crosschainTimeoutBlockNumber) {
+        this.crosschainCoordinationBlockchainId = crosschainCoordinationBlockchainId;
+        this.crosschainCoordinationContractAddress = crosschainCoordinationContractAddress;
+        this.crosschainTimeoutBlockNumber = crosschainTimeoutBlockNumber;
+    }
 
     public BigInteger getCrosschainTransactionId() {
         return this.crosschainTransactionId;
@@ -73,10 +88,29 @@ public class CrosschainContext {
     }
 
     public byte[][] getSubordinateTransactionsAndViews() {
+        if (this.subordinateTransactionsAndViews == null) {
+            return new byte[][] {};
+        }
         return this.subordinateTransactionsAndViews;
+    }
+
+    public BigInteger getCrosschainCoordinationBlockchainId() {
+        return this.crosschainCoordinationBlockchainId;
+    }
+
+    public String getCrosschainCoordinationContractAddress() {
+        return this.crosschainCoordinationContractAddress;
+    }
+
+    public BigInteger getCrosschainTimeoutBlockNumber() {
+        return this.crosschainTimeoutBlockNumber;
     }
 
     public boolean isOriginatingTransactionContext() {
         return this.fromSidechainId == null;
+    }
+
+    public boolean hasCoordinationInformation() {
+        return this.crosschainCoordinationBlockchainId != null;
     }
 }
