@@ -2,6 +2,7 @@
 description 'Pantheon JSON-RPC API'
 
 dependencies {
+    compile group: 'com.google.guava', name: 'guava', version: '14.0'
     compile project(':eea')
     testCompile project(path: ':core', configuration: 'testArtifacts')
 }

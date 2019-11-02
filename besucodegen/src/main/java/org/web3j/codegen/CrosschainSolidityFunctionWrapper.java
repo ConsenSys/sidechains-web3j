@@ -52,6 +52,7 @@ import org.web3j.protocol.core.methods.response.AbiDefinition;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
+import org.web3j.tx.CrosschainContext;
 import org.web3j.tx.CrosschainTransactionManager;
 import org.web3j.tx.TransactionManager;
 import org.web3j.utils.Strings;
@@ -61,9 +62,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
 
     private static final String BESU = "besu";
     private static final String CROSSCHAIN_TRANSACTION_MANAGER = "crosschainTransactionManager";
-    private static final String SUBORDINATE_TRANSACTIONS_AND_VIEWS =
-            "nestedSubordinateTransactionsAndViews";
-    private static final String SUBORDINATE_VIEWS = "nestedSubordinateViews";
+    private static final String CROSSCHAIN_CONTEXT = "crosschainContext";
 
     private static final String CODEGEN_WARNING =
             "<p>Auto generated code.\n"
@@ -271,11 +270,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
         }
 
         if (withSubordinateTransactionsAndViews) {
-            // Add nested subordinate views as an additional parameter.
+            // Add crosschain context as an additional parameter.
             methodBuilder.addParameter(
-                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS,
-                    Modifier.FINAL);
+                    ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
         }
 
         if (hasParams) {
@@ -324,9 +321,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
 
         if (!withSubordinateTransactionsAndViews) {
             methodBuilder.addStatement(
-                    "$T $L = null",
-                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    "$T $L = null", ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT);
         }
         methodBuilder.addStatement(
                 "$T encodedConstructor = $T.encodeConstructor($T.<$T>asList($L))",
@@ -346,7 +341,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     GAS_LIMIT,
                     BINARY,
                     INITIAL_VALUE,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
             methodBuilder.addAnnotation(Deprecated.class);
         } else if (isPayable && withGasProvider) {
             methodBuilder.addStatement(
@@ -358,7 +353,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     CONTRACT_GAS_PROVIDER,
                     BINARY,
                     INITIAL_VALUE,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
         } else if (!isPayable && !withGasProvider) {
             methodBuilder.addStatement(
                     "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, $L, encodedConstructor, $L)",
@@ -368,7 +363,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     GAS_PRICE,
                     GAS_LIMIT,
                     BINARY,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
             methodBuilder.addAnnotation(Deprecated.class);
         } else {
             methodBuilder.addStatement(
@@ -378,7 +373,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     authName,
                     CONTRACT_GAS_PROVIDER,
                     BINARY,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
         }
 
         return methodBuilder.build();
@@ -393,9 +388,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             boolean withSubordinateTransactionsAndViews) {
         if (!withSubordinateTransactionsAndViews) {
             methodBuilder.addStatement(
-                    "$T $L = null",
-                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    "$T $L = null", ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT);
         }
         if (isPayable && !withGasProvider) {
             methodBuilder.addStatement(
@@ -407,7 +400,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     GAS_LIMIT,
                     BINARY,
                     INITIAL_VALUE,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
             methodBuilder.addAnnotation(Deprecated.class);
         } else if (isPayable && withGasProvider) {
             methodBuilder.addStatement(
@@ -418,7 +411,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     CONTRACT_GAS_PROVIDER,
                     BINARY,
                     INITIAL_VALUE,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
         } else if (!isPayable && !withGasProvider) {
             methodBuilder.addStatement(
                     "return deployLockableContractRemoteCall($L.class, $L, $L, $L, $L, $L, \"\", $L)",
@@ -428,7 +421,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     GAS_PRICE,
                     GAS_LIMIT,
                     BINARY,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
             methodBuilder.addAnnotation(Deprecated.class);
         } else {
             methodBuilder.addStatement(
@@ -438,7 +431,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     authName,
                     CONTRACT_GAS_PROVIDER,
                     BINARY,
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS);
+                    CROSSCHAIN_CONTEXT);
         }
 
         return methodBuilder.build();
@@ -491,11 +484,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 methodBuilder =
                         MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
                 inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
-                // Add nested subordinate views as an additional parameter.
+                // Add crosschain context as an additional parameter.
                 methodBuilder.addParameter(
-                        ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                        SUBORDINATE_VIEWS,
-                        Modifier.FINAL);
+                        ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
                 methodBuilder.addException(IOException.class);
                 buildConstantFunctionAsSubordinateView(
                         functionDefinition,
@@ -520,11 +511,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                     functionDefinition.getName() + "_AsSignedCrosschainSubordinateTransaction";
             methodBuilder = MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
             inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
-            // Add nested subordinate transactions and views as an additional parameter.
+            // Add crosschain context as an additional parameter.
             methodBuilder.addParameter(
-                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS,
-                    Modifier.FINAL);
+                    ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
             methodBuilder.addException(IOException.class);
             buildTransactionFunctionAsSubordinateTransaction(
                     functionDefinition, methodBuilder, inputParams, useUpperCase);
@@ -534,11 +523,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             functionName = functionDefinition.getName() + "_AsCrosschainTransaction";
             methodBuilder = MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
             inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
-            // Add nested subordinate transactions and views as an additional parameter.
+            // Add crosschain context as an additional parameter.
             methodBuilder.addParameter(
-                    ArrayTypeName.of(ArrayTypeName.of(TypeName.BYTE)),
-                    SUBORDINATE_TRANSACTIONS_AND_VIEWS,
-                    Modifier.FINAL);
+                    ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
             buildTransactionFunctionAsCrosschainTransaction(
                     functionDefinition, methodBuilder, inputParams, useUpperCase);
             results.add(methodBuilder.build());
@@ -576,7 +563,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 typeName);
 
         methodBuilder.addStatement(
-                "return createSignedSubordinateView(function, " + SUBORDINATE_VIEWS + ")");
+                "return createSignedSubordinateView(function, " + CROSSCHAIN_CONTEXT + ")");
     }
 
     private void buildTransactionFunctionAsSubordinateTransaction(
@@ -609,7 +596,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
 
         methodBuilder.addStatement(
                 "return createSignedSubordinateTransaction(function, "
-                        + SUBORDINATE_TRANSACTIONS_AND_VIEWS
+                        + CROSSCHAIN_CONTEXT
                         + weiParam
                         + ")");
     }
@@ -643,7 +630,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
 
         methodBuilder.addStatement(
                 "return executeRemoteCallCrosschainTransaction(function, "
-                        + SUBORDINATE_TRANSACTIONS_AND_VIEWS
+                        + CROSSCHAIN_CONTEXT
                         + weiParam
                         + ")");
     }

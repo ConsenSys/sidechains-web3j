@@ -34,6 +34,7 @@ import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Hash;
+import org.web3j.protocol.Web3j;
 import org.web3j.protocol.besu.Besu;
 import org.web3j.protocol.besu.crypto.crosschain.CrosschainRawTransaction;
 import org.web3j.protocol.besu.crypto.crosschain.CrosschainTransactionEncoder;
@@ -50,35 +51,70 @@ import org.web3j.utils.Numeric;
 public class CrosschainTransactionManager extends RawTransactionManager {
     private final Besu besu;
     private final Credentials credentials;
-    private final long chainId;
+    private final BigInteger chainId;
+    private final Web3j coordinationBlockchain;
+    private final BigInteger crosschainCoordinationBlockchainId;
+    private final String crosschainCoordinationContractAddress;
+    private final BigInteger crosschainTimeoutInBlocks;
 
     public CrosschainTransactionManager(
             final Besu besu,
             final Credentials credentials,
-            final long chainId,
-            final TransactionReceiptProcessor transactionReceiptProcessor) {
-        super(besu, credentials, chainId, transactionReceiptProcessor);
+            final BigInteger chainId,
+            final TransactionReceiptProcessor transactionReceiptProcessor,
+            final Web3j coordinationBlockchain,
+            final BigInteger crosschainCoordinationBlockchainId,
+            final String crosschainCoordinationContractAddress,
+            final long crosschainTimeoutInBlocks) {
+        super(besu, credentials, chainId.longValue(), transactionReceiptProcessor);
         this.besu = besu;
         this.credentials = credentials;
         this.chainId = chainId;
+        this.coordinationBlockchain = coordinationBlockchain;
+        this.crosschainCoordinationBlockchainId = crosschainCoordinationBlockchainId;
+        this.crosschainCoordinationContractAddress = crosschainCoordinationContractAddress;
+        this.crosschainTimeoutInBlocks = BigInteger.valueOf(crosschainTimeoutInBlocks);
     }
 
     public CrosschainTransactionManager(
             final Besu besu,
             final Credentials credentials,
-            final long chainId,
+            final BigInteger chainId,
             final int attempts,
-            final int sleepDuration) {
+            final long sleepDuration,
+            Web3j coordinationBlockchain,
+            final BigInteger crosschainCoordinationBlockchainId,
+            final String crosschainCoordinationContractAddress,
+            final long crosschainTimeoutInBlocks) {
         this(
                 besu,
                 credentials,
                 chainId,
-                new PollingTransactionReceiptProcessor(besu, attempts, sleepDuration));
+                new PollingTransactionReceiptProcessor(besu, sleepDuration, attempts),
+                coordinationBlockchain,
+                crosschainCoordinationBlockchainId,
+                crosschainCoordinationContractAddress,
+                crosschainTimeoutInBlocks);
     }
 
     public CrosschainTransactionManager(
-            final Besu besu, final Credentials credentials, final long chainId) {
-        this(besu, credentials, chainId, DEFAULT_POLLING_ATTEMPTS_PER_TX_HASH, 15 * 1000);
+            final Besu besu,
+            final Credentials credentials,
+            final BigInteger chainId,
+            final Web3j coordinationBlockchain,
+            final BigInteger crosschainCoordinationBlockchainId,
+            final String crosschainCoordinationContractAddress,
+            final long crosschainTimeoutInBlocks) {
+        this(
+                besu,
+                credentials,
+                chainId,
+                DEFAULT_POLLING_ATTEMPTS_PER_TX_HASH,
+                DEFAULT_POLLING_FREQUENCY,
+                coordinationBlockchain,
+                crosschainCoordinationBlockchainId,
+                crosschainCoordinationContractAddress,
+                crosschainTimeoutInBlocks);
     }
 
     private byte[] createSignedCrosschainTransaction(
@@ -88,22 +124,29 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             String to,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException {
         BigInteger nonce = getNonce();
+        BigInteger currentBlockNumberOnCoordinationChain =
+                this.coordinationBlockchain.ethBlockNumber().send().getBlockNumber();
+        BigInteger crosschainTimeoutBlockNumber =
+                currentBlockNumberOnCoordinationChain.add(this.crosschainTimeoutInBlocks);
+
+        // The crosschain context information will be null if this is a single chain transaction,
+        // for instance a lockable contract deploy with no subordinate transactions or views.
+        if (crosschainContext != null) {
+            crosschainContext.addCoordinationInformation(
+                    this.crosschainCoordinationBlockchainId,
+                    this.crosschainCoordinationContractAddress,
+                    crosschainTimeoutBlockNumber);
+        }
 
         CrosschainRawTransaction rawCrossChainTx =
                 CrosschainRawTransaction.createTransaction(
-                        type,
-                        nonce,
-                        gasPrice,
-                        gasLimit,
-                        to,
-                        value,
-                        data,
-                        subordinateTransactionsAndViews);
+                        type, nonce, gasPrice, gasLimit, to, value, data, crosschainContext);
 
-        return CrosschainTransactionEncoder.signMessage(rawCrossChainTx, chainId, credentials);
+        return CrosschainTransactionEncoder.signMessage(
+                rawCrossChainTx, chainId.longValue(), credentials);
     }
 
     public byte[] createSignedSubordinateTransaction(
@@ -112,7 +155,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             String to,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException {
         return createSignedCrosschainTransaction(
                 CrosschainTransactionType.SUBORDINATE_TRANSACTION,
@@ -121,7 +164,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
                 to,
                 data,
                 value,
-                subordinateTransactionsAndViews);
+                crosschainContext);
     }
 
     public byte[] createSignedSubordinateDeployLockable(
@@ -129,7 +172,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             BigInteger gasLimit,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException {
         // Given this is a deploy, the to address is null.
         return createSignedCrosschainTransaction(
@@ -139,7 +182,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
                 null,
                 data,
                 value,
-                subordinateTransactionsAndViews);
+                crosschainContext);
     }
 
     public byte[] createSignedSubordinateView(
@@ -148,7 +191,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             String to,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException {
         return createSignedCrosschainTransaction(
                 CrosschainTransactionType.SUBORDINATE_VIEW,
@@ -157,7 +200,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
                 to,
                 data,
                 value,
-                subordinateTransactionsAndViews);
+                crosschainContext);
     }
 
     public byte[] createSignedOriginatingTx(
@@ -166,7 +209,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             String to,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException {
         return createSignedCrosschainTransaction(
                 CrosschainTransactionType.ORIGINATING_TRANSACTION,
@@ -175,7 +218,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
                 to,
                 data,
                 value,
-                subordinateTransactionsAndViews);
+                crosschainContext);
     }
 
     public byte[] createSignedOriginatingDeployLockable(
@@ -183,15 +226,15 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             BigInteger gasLimit,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException {
         // Given this is a deploy, the to address is null.
         CrosschainTransactionType type =
-                (subordinateTransactionsAndViews == null)
+                (crosschainContext == null)
                         ? CrosschainTransactionType.SINGLECHAIN_DEPLOY_LOCKABLE
                         : CrosschainTransactionType.ORIGINATING_DEPLOY_LOCKABLE;
         return createSignedCrosschainTransaction(
-                type, gasPrice, gasLimit, null, data, value, subordinateTransactionsAndViews);
+                type, gasPrice, gasLimit, null, data, value, crosschainContext);
     }
 
     public TransactionReceipt executeCrosschainTransaction(
@@ -200,12 +243,11 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             String to,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException, TransactionException {
 
         byte[] signedMessage =
-                createSignedOriginatingTx(
-                        gasPrice, gasLimit, to, data, value, subordinateTransactionsAndViews);
+                createSignedOriginatingTx(gasPrice, gasLimit, to, data, value, crosschainContext);
         return executeTx(signedMessage);
     }
 
@@ -214,11 +256,11 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             BigInteger gasLimit,
             String data,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException, TransactionException {
         byte[] signedMessage =
                 createSignedOriginatingDeployLockable(
-                        gasPrice, gasLimit, data, value, subordinateTransactionsAndViews);
+                        gasPrice, gasLimit, data, value, crosschainContext);
         return executeTx(signedMessage);
     }
 
@@ -254,14 +296,13 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             String to,
             Function function,
             BigInteger value,
-            byte[][] subordinateTransactionsAndViews)
+            CrosschainContext crosschainContext)
             throws IOException {
 
         String data = FunctionEncoder.encode(function);
 
         byte[] signedMessage =
-                createSignedSubordinateView(
-                        gasPrice, gasLimit, to, data, value, subordinateTransactionsAndViews);
+                createSignedSubordinateView(gasPrice, gasLimit, to, data, value, crosschainContext);
 
         String hexValue = Numeric.toHexString(signedMessage);
         CrosschainProcessSubordinateView response =
