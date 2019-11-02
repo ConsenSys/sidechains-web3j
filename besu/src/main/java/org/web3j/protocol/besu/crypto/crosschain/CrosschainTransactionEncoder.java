@@ -73,14 +73,23 @@ public class CrosschainTransactionEncoder {
 
         List<RlpType> result = new ArrayList<>();
         result.add(RlpString.create(rawTransaction.getType()));
-        result.add(RlpString.create(context.getCrosschainCoordinationBlockchainId()));
-        result.add(RlpString.create(context.getCrosschainCoordinationContractAddress()));
-        result.add(RlpString.create(context.getCrosschainTimeoutBlockNumber()));
-        result.add(RlpString.create(context.getCrosschainTransactionId()));
-        result.add(RlpString.create(context.getOriginatingSidechainId()));
-        if (!context.isOriginatingTransactionContext()) {
-            result.add(RlpString.create(context.getFromSidechainId()));
-            result.add(RlpString.create(context.getFromAddress()));
+        // This information isn't needed for crosschain transaction types that are just on a single
+        // blockchain.
+        if (context != null) {
+            result.add(RlpString.create(context.getCrosschainCoordinationBlockchainId()));
+            result.add(
+                    RlpString.create(
+                            Numeric.hexStringToByteArray(
+                                    context.getCrosschainCoordinationContractAddress())));
+            result.add(RlpString.create(context.getCrosschainTimeoutBlockNumber()));
+            result.add(RlpString.create(context.getCrosschainTransactionId()));
+            if (context.getFromSidechainId() != null) {
+                // This information isn't needed for originating transactions.
+                result.add(RlpString.create(context.getOriginatingSidechainId()));
+                result.add(RlpString.create(context.getFromSidechainId()));
+                result.add(
+                        RlpString.create(Numeric.hexStringToByteArray(context.getFromAddress())));
+            }
         }
         result.add(RlpString.create(rawTransaction.getNonce()));
         result.add(RlpString.create(rawTransaction.getGasPrice()));
@@ -103,17 +112,16 @@ public class CrosschainTransactionEncoder {
         result.add(RlpString.create(data));
 
         // If there are any subordinate transactions or views, add them here as an RLP Array.
-        byte[][] subordinateTransactionsAndViews = context.getSubordinateTransactionsAndViews();
-        List<RlpType> rlpSubordinateTransactionsAndViews = new ArrayList<>();
-        if (subordinateTransactionsAndViews != null) {
+        if (context != null) {
+            byte[][] subordinateTransactionsAndViews = context.getSubordinateTransactionsAndViews();
+            List<RlpType> rlpSubordinateTransactionsAndViews = new ArrayList<>();
             for (byte[] signedTransactionOrView : subordinateTransactionsAndViews) {
-
                 rlpSubordinateTransactionsAndViews.add(RlpString.create(signedTransactionOrView));
             }
+            RlpList rlpListSubordinateTransactionsAndViews =
+                    new RlpList(rlpSubordinateTransactionsAndViews);
+            result.add(rlpListSubordinateTransactionsAndViews);
         }
-        RlpList rlpListSubordinateTransactionsAndViews =
-                new RlpList(rlpSubordinateTransactionsAndViews);
-        result.add(rlpListSubordinateTransactionsAndViews);
 
         if (signatureData != null) {
             result.add(RlpString.create(signatureData.getV()));

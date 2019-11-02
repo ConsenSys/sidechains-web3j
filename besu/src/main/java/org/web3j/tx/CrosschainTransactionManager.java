@@ -132,10 +132,14 @@ public class CrosschainTransactionManager extends RawTransactionManager {
         BigInteger crosschainTimeoutBlockNumber =
                 currentBlockNumberOnCoordinationChain.add(this.crosschainTimeoutInBlocks);
 
-        crosschainContext.addCoordinationInformation(
-                this.crosschainCoordinationBlockchainId,
-                this.crosschainCoordinationContractAddress,
-                crosschainTimeoutBlockNumber);
+        // The crosschain context information will be null if this is a single chain transaction,
+        // for instance a lockable contract deploy with no subordinate transactions or views.
+        if (crosschainContext != null) {
+            crosschainContext.addCoordinationInformation(
+                    this.crosschainCoordinationBlockchainId,
+                    this.crosschainCoordinationContractAddress,
+                    crosschainTimeoutBlockNumber);
+        }
 
         CrosschainRawTransaction rawCrossChainTx =
                 CrosschainRawTransaction.createTransaction(
