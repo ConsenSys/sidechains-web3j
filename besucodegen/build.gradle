@@ -3,7 +3,8 @@ description 'web3j project code generators for besu'
 
 dependencies {
     compile project(':codegen'),
-            project(':besu')
+            project(':besu'),
+	    "org.slf4j:slf4j-simple:$slf4jVersion"
     testCompile project(path: ':codegen', configuration: 'testArtifacts')
 }
 
