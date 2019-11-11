@@ -186,7 +186,9 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 constructor = true;
                 // buildDeployMethods(methodSpecs, className, functionDefinition, false, false);
                 buildDeployMethods(methodSpecs, className, functionDefinition, true, false);
-                buildDeployMethods(methodSpecs, className, functionDefinition, true, true);
+                if (!functionDefinition.isPayable()) {
+                    buildDeployMethods(methodSpecs, className, functionDefinition, true, true);
+                }
 
                 // TODO get as signed subordinate lockable contract deploy
             }
@@ -506,29 +508,33 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
             buildTransactionFunction(functionDefinition, methodBuilder, inputParams, useUpperCase);
             results.add(methodBuilder.build());
 
-            // Create the function as a signed subordinate transaction method.
-            functionName =
-                    functionDefinition.getName() + "_AsSignedCrosschainSubordinateTransaction";
-            methodBuilder = MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
-            inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
-            // Add crosschain context as an additional parameter.
-            methodBuilder.addParameter(
-                    ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
-            methodBuilder.addException(IOException.class);
-            buildTransactionFunctionAsSubordinateTransaction(
-                    functionDefinition, methodBuilder, inputParams, useUpperCase);
-            results.add(methodBuilder.build());
+            if (!functionDefinition.isPayable()) {
+                // Create the function as a signed subordinate transaction method.
+                functionName =
+                        functionDefinition.getName() + "_AsSignedCrosschainSubordinateTransaction";
+                methodBuilder =
+                        MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
+                inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
+                // Add crosschain context as an additional parameter.
+                methodBuilder.addParameter(
+                        ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
+                methodBuilder.addException(IOException.class);
+                buildTransactionFunctionAsSubordinateTransaction(
+                        functionDefinition, methodBuilder, inputParams, useUpperCase);
+                results.add(methodBuilder.build());
 
-            // Create the function as an originating crosschain transaction method.
-            functionName = functionDefinition.getName() + "_AsCrosschainTransaction";
-            methodBuilder = MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
-            inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
-            // Add crosschain context as an additional parameter.
-            methodBuilder.addParameter(
-                    ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
-            buildTransactionFunctionAsCrosschainTransaction(
-                    functionDefinition, methodBuilder, inputParams, useUpperCase);
-            results.add(methodBuilder.build());
+                // Create the function as an originating crosschain transaction method.
+                functionName = functionDefinition.getName() + "_AsCrosschainTransaction";
+                methodBuilder =
+                        MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
+                inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
+                // Add crosschain context as an additional parameter.
+                methodBuilder.addParameter(
+                        ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
+                buildTransactionFunctionAsCrosschainTransaction(
+                        functionDefinition, methodBuilder, inputParams, useUpperCase);
+                results.add(methodBuilder.build());
+            }
         }
 
         return results;
