@@ -191,7 +191,7 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
     public Request<?, EthSendTransaction> crosschainSendCrossChainRawTransaction(
             String signedTransactionData) {
         return new Request<>(
-                "eth_sendRawCrosschainTransaction",
+                "cross_sendRawCrosschainTransaction",
                 Arrays.asList(signedTransactionData),
                 web3jService,
                 EthSendTransaction.class);
@@ -200,7 +200,7 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
     public Request<?, CrosschainProcessSubordinateView> crosschainProcessSubordinateView(
             String signedTransactionData) {
         return new Request<>(
-                "eth_processSubordinateView",
+                "cross_processSubordinateView",
                 Arrays.asList(signedTransactionData),
                 web3jService,
                 CrosschainProcessSubordinateView.class);
@@ -209,7 +209,7 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
     public Request<?, CrosschainIsLockable> crosschainIsLockable(
             String address, DefaultBlockParameter defaultBlockParameter) {
         return new Request<>(
-                "eth_isLockable",
+                "cross_isLockable",
                 Arrays.asList(address, defaultBlockParameter.getValue()),
                 web3jService,
                 CrosschainIsLockable.class);
@@ -218,7 +218,7 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
     public Request<?, CrosschainIsLocked> crosschainIsLocked(
             String address, DefaultBlockParameter defaultBlockParameter) {
         return new Request<>(
-                "eth_isLocked",
+                "cross_isLocked",
                 Arrays.asList(address, defaultBlockParameter.getValue()),
                 web3jService,
                 CrosschainIsLocked.class);
