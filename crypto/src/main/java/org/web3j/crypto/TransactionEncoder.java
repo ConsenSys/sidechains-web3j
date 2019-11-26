@@ -63,8 +63,25 @@ public class TransactionEncoder {
         v = v.subtract(BigInteger.valueOf(LOWER_REAL_V));
         v = v.add(BigInteger.valueOf(chainId * 2));
         v = v.add(BigInteger.valueOf(CHAIN_ID_INC));
+        return new Sign.SignatureData(toExactBytes(v), signatureData.getR(), signatureData.getS());
+    }
 
-        return new Sign.SignatureData(v.toByteArray(), signatureData.getR(), signatureData.getS());
+    /**
+     * When RLP Encoding, ensure the top byte is not zero. BigInteger's toByteArray assumes the
+     * BigInteger is a signed value. With RLP encoding all values are unsigned. As such, for RLP
+     * encoding, having a top byte of zero doesn't make sense and is a bug.
+     *
+     * @param bigInteger Value to convert to a byte array.
+     * @return Byte array equivalent of the unsigned bigInteger value.
+     */
+    public static byte[] toExactBytes(BigInteger bigInteger) {
+        byte[] bytes = bigInteger.toByteArray();
+        if (bytes[0] == 0) {
+            byte[] temp = new byte[bytes.length - 1];
+            System.arraycopy(bytes, 1, temp, 0, temp.length);
+            bytes = temp;
+        }
+        return bytes;
     }
 
     @Deprecated
