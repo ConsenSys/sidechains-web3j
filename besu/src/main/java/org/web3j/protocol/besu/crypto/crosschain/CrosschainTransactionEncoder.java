@@ -24,6 +24,7 @@ package org.web3j.protocol.besu.crypto.crosschain;
  * specific language governing permissions and limitations under the License.
  */
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +39,7 @@ import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
 
 import static org.web3j.crypto.TransactionEncoder.createEip155SignatureData;
+import static org.web3j.crypto.TransactionEncoder.toExactBytes;
 
 public class CrosschainTransactionEncoder {
 
@@ -53,11 +55,17 @@ public class CrosschainTransactionEncoder {
 
     private static byte[] encode(CrosschainRawTransaction rawTransaction, long chainId) {
         Sign.SignatureData signatureData =
-                new Sign.SignatureData((byte) chainId, new byte[] {}, new byte[] {});
+                new Sign.SignatureData(longToBytes(chainId), new byte[] {}, new byte[] {});
         // TODO Putting in the following line
-        //                    new Sign.SignatureData(longToBytes(chainId), new byte[] {}, new byte[]
+        //                            new Sign.SignatureData(longToBytes(chainId), new byte[] {},
+        // new byte[]
         // {});
         return encode(rawTransaction, signatureData);
+    }
+
+    private static byte[] longToBytes(final long chainId) {
+        BigInteger chainIdLong = BigInteger.valueOf(chainId);
+        return toExactBytes(chainIdLong);
     }
 
     private static byte[] encode(
