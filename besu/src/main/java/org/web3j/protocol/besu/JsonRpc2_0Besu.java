@@ -30,7 +30,7 @@ import org.web3j.protocol.besu.response.crosschain.CrosschainIsLockable;
 import org.web3j.protocol.besu.response.crosschain.CrosschainIsLocked;
 import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
 import org.web3j.protocol.besu.response.crosschain.LongResponse;
-import org.web3j.protocol.besu.response.crosschain.VoidResponse;
+import org.web3j.protocol.besu.response.crosschain.NoResponse;
 import org.web3j.protocol.besu.response.privacy.PrivCreatePrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivFindPrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivGetPrivacyPrecompileAddress;
@@ -237,13 +237,13 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 CrosschainCheckUnlock.class);
     }
 
-    public Request<?, VoidResponse> crossAddMultichainNode(
+    public Request<?, NoResponse> crossAddMultichainNode(
             final BigInteger blockchainId, final String ipAddressAndPort) {
         return new Request<>(
                 "cross_addMultichainNode",
                 Arrays.asList(blockchainId, ipAddressAndPort),
                 web3jService,
-                VoidResponse.class);
+                NoResponse.class);
     }
 
     public Request<?, CrossListMultichainNodesResponse> crossListMultichainNodes() {
@@ -254,12 +254,12 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 CrossListMultichainNodesResponse.class);
     }
 
-    public Request<?, VoidResponse> crossRemoveMultichainNode(final BigInteger blockchainId) {
+    public Request<?, NoResponse> crossRemoveMultichainNode(final BigInteger blockchainId) {
         return new Request<>(
                 "cross_removeMultichainNode",
                 Arrays.asList(blockchainId),
                 web3jService,
-                VoidResponse.class);
+                NoResponse.class);
     }
 
     public Request<?, LongResponse> crossStartThresholdKeyGeneration(

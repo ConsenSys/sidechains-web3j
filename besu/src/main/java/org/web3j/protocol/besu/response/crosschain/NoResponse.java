@@ -14,5 +14,10 @@ package org.web3j.protocol.besu.response.crosschain;
 
 import org.web3j.protocol.core.Response;
 
-/** Void response type is used when no response is returned by the command. */
-public class VoidResponse extends Response<Void> {}
+/**
+ * Use this response type for when a method has no return value.
+ *
+ * <p>Using Void response results in JSON encoding errors. Hence, say that the return type is a
+ * String.
+ */
+public class NoResponse extends Response<String> {}
