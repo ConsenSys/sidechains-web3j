@@ -12,6 +12,7 @@
  */
 package org.web3j.protocol.besu;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -19,13 +20,17 @@ import java.util.Map;
 
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.admin.methods.response.BooleanResponse;
+import org.web3j.protocol.besu.crypto.crosschain.BlsThresholdCryptoSystem;
 import org.web3j.protocol.besu.request.CreatePrivacyGroupRequest;
 import org.web3j.protocol.besu.response.BesuEthAccountsMapResponse;
 import org.web3j.protocol.besu.response.BesuFullDebugTraceResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossListMultichainNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.CrosschainCheckUnlock;
 import org.web3j.protocol.besu.response.crosschain.CrosschainIsLockable;
 import org.web3j.protocol.besu.response.crosschain.CrosschainIsLocked;
 import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
+import org.web3j.protocol.besu.response.crosschain.LongResponse;
+import org.web3j.protocol.besu.response.crosschain.VoidResponse;
 import org.web3j.protocol.besu.response.privacy.PrivCreatePrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivFindPrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivGetPrivacyPrecompileAddress;
@@ -230,5 +235,39 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 Arrays.asList(address),
                 web3jService,
                 CrosschainCheckUnlock.class);
+    }
+
+    public Request<?, VoidResponse> crossAddMultichainNode(
+            final BigInteger blockchainId, final String ipAddressAndPort) {
+        return new Request<>(
+                "cross_addMultichainNode",
+                Arrays.asList(blockchainId, ipAddressAndPort),
+                web3jService,
+                VoidResponse.class);
+    }
+
+    public Request<?, CrossListMultichainNodesResponse> crossListMultichainNodes() {
+        return new Request<>(
+                "cross_listMultichainNodes",
+                Collections.<String>emptyList(),
+                web3jService,
+                CrossListMultichainNodesResponse.class);
+    }
+
+    public Request<?, VoidResponse> crossRemoveMultichainNode(final BigInteger blockchainId) {
+        return new Request<>(
+                "cross_removeMultichainNode",
+                Arrays.asList(blockchainId),
+                web3jService,
+                VoidResponse.class);
+    }
+
+    public Request<?, LongResponse> crossStartThresholdKeyGeneration(
+            final int threshold, final BlsThresholdCryptoSystem cryptoSystem) {
+        return new Request<>(
+                "cross_startThresholdKeyGeneration",
+                Arrays.asList(threshold, cryptoSystem),
+                web3jService,
+                LongResponse.class);
     }
 }
