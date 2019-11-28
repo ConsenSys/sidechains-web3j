@@ -12,17 +12,22 @@
  */
 package org.web3j.protocol.besu;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.admin.methods.response.BooleanResponse;
+import org.web3j.protocol.besu.crypto.crosschain.BlsThresholdCryptoSystem;
 import org.web3j.protocol.besu.response.BesuEthAccountsMapResponse;
 import org.web3j.protocol.besu.response.BesuFullDebugTraceResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossListMultichainNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.CrosschainCheckUnlock;
 import org.web3j.protocol.besu.response.crosschain.CrosschainIsLockable;
 import org.web3j.protocol.besu.response.crosschain.CrosschainIsLocked;
 import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
+import org.web3j.protocol.besu.response.crosschain.LongResponse;
+import org.web3j.protocol.besu.response.crosschain.VoidResponse;
 import org.web3j.protocol.besu.response.privacy.PrivCreatePrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivFindPrivacyGroup;
 import org.web3j.protocol.besu.response.privacy.PrivGetPrivacyPrecompileAddress;
@@ -107,4 +112,14 @@ public interface Besu extends Eea {
             String address, DefaultBlockParameter defaultBlockParameter);
 
     Request<?, CrosschainCheckUnlock> crosschainCheckUnlock(String address);
+
+    public Request<?, VoidResponse> crossAddMultichainNode(
+            final BigInteger blockchainId, final String ipAddressAndPort);
+
+    public Request<?, CrossListMultichainNodesResponse> crossListMultichainNodes();
+
+    public Request<?, VoidResponse> crossRemoveMultichainNode(final BigInteger blockchainId);
+
+    public Request<?, LongResponse> crossStartThresholdKeyGeneration(
+            final int threshold, final BlsThresholdCryptoSystem cryptoSystem);
 }
