@@ -21,11 +21,16 @@ import org.web3j.protocol.admin.methods.response.BooleanResponse;
 import org.web3j.protocol.besu.crypto.crosschain.BlsThresholdCryptoSystem;
 import org.web3j.protocol.besu.response.BesuEthAccountsMapResponse;
 import org.web3j.protocol.besu.response.BesuFullDebugTraceResponse;
-import org.web3j.protocol.besu.response.crosschain.CrossListMultichainNodesResponse;
-import org.web3j.protocol.besu.response.crosschain.CrosschainCheckUnlock;
-import org.web3j.protocol.besu.response.crosschain.CrosschainIsLockable;
-import org.web3j.protocol.besu.response.crosschain.CrosschainIsLocked;
-import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
+import org.web3j.protocol.besu.response.crosschain.CrossBlockchainPublicKeyResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossCheckUnlockResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossIsLockableResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossIsLockedResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossProcessSubordinateViewResponse;
+import org.web3j.protocol.besu.response.crosschain.KeyGenFailureReasonResponse;
+import org.web3j.protocol.besu.response.crosschain.KeyGenNodesDroppedOutOfKeyGenerationResponse;
+import org.web3j.protocol.besu.response.crosschain.KeyStatusResponse;
+import org.web3j.protocol.besu.response.crosschain.ListCoordinationContractsResponse;
+import org.web3j.protocol.besu.response.crosschain.ListNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.LongResponse;
 import org.web3j.protocol.besu.response.crosschain.NoResponse;
 import org.web3j.protocol.besu.response.privacy.PrivCreatePrivacyGroup;
@@ -99,27 +104,53 @@ public interface Besu extends Eea {
 
     Request<?, PrivGetTransactionReceipt> privGetTransactionReceipt(final String transactionHash);
 
-    Request<?, EthSendTransaction> crosschainSendCrossChainRawTransaction(
-            String signedTransactionData);
+    Request<?, NoResponse> crossActivateKey(final long keyVersion);
 
-    Request<?, CrosschainProcessSubordinateView> crosschainProcessSubordinateView(
-            String signedTransactionData);
-
-    Request<?, CrosschainIsLockable> crosschainIsLockable(
-            String address, DefaultBlockParameter defaultBlockParameter);
-
-    Request<?, CrosschainIsLocked> crosschainIsLocked(
-            String address, DefaultBlockParameter defaultBlockParameter);
-
-    Request<?, CrosschainCheckUnlock> crosschainCheckUnlock(String address);
-
-    public Request<?, NoResponse> crossAddMultichainNode(
+    Request<?, NoResponse> crossAddMultichainNode(
             final BigInteger blockchainId, final String ipAddressAndPort);
 
-    public Request<?, CrossListMultichainNodesResponse> crossListMultichainNodes();
+    Request<?, NoResponse> crossAddCoordinationContract(
+            final String address, final String ipAddressAndPort);
 
-    public Request<?, NoResponse> crossRemoveMultichainNode(final BigInteger blockchainId);
+    Request<?, CrossCheckUnlockResponse> crossCheckUnlock(String address);
 
-    public Request<?, LongResponse> crossStartThresholdKeyGeneration(
+    Request<?, LongResponse> crossGetActiveKeyVersion();
+
+    Request<?, CrossBlockchainPublicKeyResponse> crossGetBlockchainPublicKey();
+
+    Request<?, CrossBlockchainPublicKeyResponse> crossGetBlockchainPublicKey(final long keyVersion);
+
+    Request<?, ListNodesResponse> crossGetKeyActiveNodes(final long keyVersion);
+
+    Request<?, KeyGenFailureReasonResponse> crossGetKeyGenFailureReason(final long keyVersion);
+
+    Request<?, KeyGenNodesDroppedOutOfKeyGenerationResponse>
+            crossGetKeyGenNodesDroppedOutOfKeyGeneration(final long keyVersion);
+
+    Request<?, KeyStatusResponse> crossGetKeyStatus(final long keyVersion);
+
+    Request<?, CrossIsLockableResponse> crossIsLockable(
+            String address, DefaultBlockParameter defaultBlockParameter);
+
+    Request<?, CrossIsLockedResponse> crossIsLocked(
+            String address, DefaultBlockParameter defaultBlockParameter);
+
+    Request<?, ListCoordinationContractsResponse> crossListCoordinationContracts();
+
+    Request<?, ListNodesResponse> crossListMultichainNodes();
+
+    Request<?, CrossProcessSubordinateViewResponse> crossProcessSubordinateView(
+            String signedTransactionData);
+
+    Request<?, NoResponse> crossRemoveCoordinationContract(
+            final BigInteger blockchainId, final String address);
+
+    Request<?, NoResponse> crossRemoveMultichainNode(final BigInteger blockchainId);
+
+    Request<?, EthSendTransaction> crossSendCrossChainRawTransaction(String signedTransactionData);
+
+    Request<?, NoResponse> crossSetKeyGenerationContractAddress(final String address);
+
+    Request<?, LongResponse> crossStartThresholdKeyGeneration(
             final int threshold, final BlsThresholdCryptoSystem cryptoSystem);
 }

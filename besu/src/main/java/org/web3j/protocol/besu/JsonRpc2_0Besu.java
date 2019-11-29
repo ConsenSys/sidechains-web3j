@@ -24,11 +24,16 @@ import org.web3j.protocol.besu.crypto.crosschain.BlsThresholdCryptoSystem;
 import org.web3j.protocol.besu.request.CreatePrivacyGroupRequest;
 import org.web3j.protocol.besu.response.BesuEthAccountsMapResponse;
 import org.web3j.protocol.besu.response.BesuFullDebugTraceResponse;
-import org.web3j.protocol.besu.response.crosschain.CrossListMultichainNodesResponse;
-import org.web3j.protocol.besu.response.crosschain.CrosschainCheckUnlock;
-import org.web3j.protocol.besu.response.crosschain.CrosschainIsLockable;
-import org.web3j.protocol.besu.response.crosschain.CrosschainIsLocked;
-import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
+import org.web3j.protocol.besu.response.crosschain.CrossBlockchainPublicKeyResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossCheckUnlockResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossIsLockableResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossIsLockedResponse;
+import org.web3j.protocol.besu.response.crosschain.CrossProcessSubordinateViewResponse;
+import org.web3j.protocol.besu.response.crosschain.KeyGenFailureReasonResponse;
+import org.web3j.protocol.besu.response.crosschain.KeyGenNodesDroppedOutOfKeyGenerationResponse;
+import org.web3j.protocol.besu.response.crosschain.KeyStatusResponse;
+import org.web3j.protocol.besu.response.crosschain.ListCoordinationContractsResponse;
+import org.web3j.protocol.besu.response.crosschain.ListNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.LongResponse;
 import org.web3j.protocol.besu.response.crosschain.NoResponse;
 import org.web3j.protocol.besu.response.privacy.PrivCreatePrivacyGroup;
@@ -193,48 +198,9 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 PrivGetTransactionReceipt.class);
     }
 
-    public Request<?, EthSendTransaction> crosschainSendCrossChainRawTransaction(
-            String signedTransactionData) {
+    public Request<?, NoResponse> crossActivateKey(final long keyVersion) {
         return new Request<>(
-                "cross_sendRawCrosschainTransaction",
-                Arrays.asList(signedTransactionData),
-                web3jService,
-                EthSendTransaction.class);
-    }
-
-    public Request<?, CrosschainProcessSubordinateView> crosschainProcessSubordinateView(
-            String signedTransactionData) {
-        return new Request<>(
-                "cross_processSubordinateView",
-                Arrays.asList(signedTransactionData),
-                web3jService,
-                CrosschainProcessSubordinateView.class);
-    }
-
-    public Request<?, CrosschainIsLockable> crosschainIsLockable(
-            String address, DefaultBlockParameter defaultBlockParameter) {
-        return new Request<>(
-                "cross_isLockable",
-                Arrays.asList(address, defaultBlockParameter.getValue()),
-                web3jService,
-                CrosschainIsLockable.class);
-    }
-
-    public Request<?, CrosschainIsLocked> crosschainIsLocked(
-            String address, DefaultBlockParameter defaultBlockParameter) {
-        return new Request<>(
-                "cross_isLocked",
-                Arrays.asList(address, defaultBlockParameter.getValue()),
-                web3jService,
-                CrosschainIsLocked.class);
-    }
-
-    public Request<?, CrosschainCheckUnlock> crosschainCheckUnlock(String address) {
-        return new Request<>(
-                "cross_checkUnlock",
-                Arrays.asList(address),
-                web3jService,
-                CrosschainCheckUnlock.class);
+                "cross_activateKey", Arrays.asList(keyVersion), web3jService, NoResponse.class);
     }
 
     public Request<?, NoResponse> crossAddMultichainNode(
@@ -246,18 +212,155 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 NoResponse.class);
     }
 
-    public Request<?, CrossListMultichainNodesResponse> crossListMultichainNodes() {
+    public Request<?, NoResponse> crossAddCoordinationContract(
+            final String address, final String ipAddressAndPort) {
+        return new Request<>(
+                "cross_addCoordinationContract",
+                Arrays.asList(address, ipAddressAndPort),
+                web3jService,
+                NoResponse.class);
+    }
+
+    public Request<?, CrossCheckUnlockResponse> crossCheckUnlock(final String address) {
+        return new Request<>(
+                "cross_checkUnlock",
+                Arrays.asList(address),
+                web3jService,
+                CrossCheckUnlockResponse.class);
+    }
+
+    public Request<?, LongResponse> crossGetActiveKeyVersion() {
+        return new Request<>(
+                "cross_getActiveKeyVersion",
+                Collections.<String>emptyList(),
+                web3jService,
+                LongResponse.class);
+    }
+
+    public Request<?, CrossBlockchainPublicKeyResponse> crossGetBlockchainPublicKey() {
+        return new Request<>(
+                "cross_getBlockchainPublicKey",
+                Collections.<String>emptyList(),
+                web3jService,
+                CrossBlockchainPublicKeyResponse.class);
+    }
+
+    public Request<?, CrossBlockchainPublicKeyResponse> crossGetBlockchainPublicKey(
+            final long keyVersion) {
+        return new Request<>(
+                "cross_getBlockchainPublicKey",
+                Arrays.asList(keyVersion),
+                web3jService,
+                CrossBlockchainPublicKeyResponse.class);
+    }
+
+    public Request<?, ListNodesResponse> crossGetKeyActiveNodes(final long keyVersion) {
+        return new Request<>(
+                "cross_getKeyActiveNodes",
+                Arrays.asList(keyVersion),
+                web3jService,
+                ListNodesResponse.class);
+    }
+
+    public Request<?, KeyGenFailureReasonResponse> crossGetKeyGenFailureReason(
+            final long keyVersion) {
+        return new Request<>(
+                "cross_getKeyGenFailureReason",
+                Arrays.asList(keyVersion),
+                web3jService,
+                KeyGenFailureReasonResponse.class);
+    }
+
+    public Request<?, KeyGenNodesDroppedOutOfKeyGenerationResponse>
+            crossGetKeyGenNodesDroppedOutOfKeyGeneration(final long keyVersion) {
+        return new Request<>(
+                "cross_getKeyGenNodesDroppedOutOfKeyGeneration",
+                Arrays.asList(keyVersion),
+                web3jService,
+                KeyGenNodesDroppedOutOfKeyGenerationResponse.class);
+    }
+
+    public Request<?, KeyStatusResponse> crossGetKeyStatus(final long keyVersion) {
+        return new Request<>(
+                "cross_getKeyStatus",
+                Arrays.asList(keyVersion),
+                web3jService,
+                KeyStatusResponse.class);
+    }
+
+    public Request<?, CrossIsLockableResponse> crossIsLockable(
+            String address, DefaultBlockParameter defaultBlockParameter) {
+        return new Request<>(
+                "cross_isLockable",
+                Arrays.asList(address, defaultBlockParameter.getValue()),
+                web3jService,
+                CrossIsLockableResponse.class);
+    }
+
+    public Request<?, CrossIsLockedResponse> crossIsLocked(
+            String address, DefaultBlockParameter defaultBlockParameter) {
+        return new Request<>(
+                "cross_isLocked",
+                Arrays.asList(address, defaultBlockParameter.getValue()),
+                web3jService,
+                CrossIsLockedResponse.class);
+    }
+
+    public Request<?, ListCoordinationContractsResponse> crossListCoordinationContracts() {
+        return new Request<>(
+                "cross_listCoordinationContracts",
+                Collections.<String>emptyList(),
+                web3jService,
+                ListCoordinationContractsResponse.class);
+    }
+
+    public Request<?, ListNodesResponse> crossListMultichainNodes() {
         return new Request<>(
                 "cross_listMultichainNodes",
                 Collections.<String>emptyList(),
                 web3jService,
-                CrossListMultichainNodesResponse.class);
+                ListNodesResponse.class);
+    }
+
+    public Request<?, CrossProcessSubordinateViewResponse> crossProcessSubordinateView(
+            String signedTransactionData) {
+        return new Request<>(
+                "cross_processSubordinateView",
+                Arrays.asList(signedTransactionData),
+                web3jService,
+                CrossProcessSubordinateViewResponse.class);
+    }
+
+    public Request<?, NoResponse> crossRemoveCoordinationContract(
+            final BigInteger blockchainId, final String address) {
+        return new Request<>(
+                "cross_removeCoordinationContract",
+                Arrays.asList(blockchainId, address),
+                web3jService,
+                NoResponse.class);
     }
 
     public Request<?, NoResponse> crossRemoveMultichainNode(final BigInteger blockchainId) {
         return new Request<>(
                 "cross_removeMultichainNode",
                 Arrays.asList(blockchainId),
+                web3jService,
+                NoResponse.class);
+    }
+
+    public Request<?, EthSendTransaction> crossSendCrossChainRawTransaction(
+            String signedTransactionData) {
+        return new Request<>(
+                "cross_sendRawCrosschainTransaction",
+                Arrays.asList(signedTransactionData),
+                web3jService,
+                EthSendTransaction.class);
+    }
+
+    public Request<?, NoResponse> crossSetKeyGenerationContractAddress(final String address) {
+        return new Request<>(
+                "cross_setKeyGenerationContractAddress",
+                Arrays.asList(address),
                 web3jService,
                 NoResponse.class);
     }
