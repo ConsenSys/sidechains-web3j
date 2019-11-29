@@ -24,15 +24,11 @@ package org.web3j.protocol.besu.response.crosschain;
  * specific language governing permissions and limitations under the License.
  */
 
-import java.math.BigInteger;
-
 import org.web3j.protocol.core.Response;
-import org.web3j.utils.Numeric;
 
-public class CrosschainIsLockable extends Response<String> {
+public class CrossProcessSubordinateViewResponse extends Response<String> {
 
-    public Boolean isLockable() {
-        BigInteger value = Numeric.decodeQuantity(getResult());
-        return (value.equals(BigInteger.ONE));
+    public String getValue() {
+        return getResult();
     }
 }

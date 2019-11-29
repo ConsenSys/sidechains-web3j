@@ -39,7 +39,7 @@ import org.web3j.protocol.besu.Besu;
 import org.web3j.protocol.besu.crypto.crosschain.CrosschainRawTransaction;
 import org.web3j.protocol.besu.crypto.crosschain.CrosschainTransactionEncoder;
 import org.web3j.protocol.besu.crypto.crosschain.CrosschainTransactionType;
-import org.web3j.protocol.besu.response.crosschain.CrosschainProcessSubordinateView;
+import org.web3j.protocol.besu.response.crosschain.CrossProcessSubordinateViewResponse;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
@@ -268,7 +268,7 @@ public class CrosschainTransactionManager extends RawTransactionManager {
             throws IOException, TransactionException {
         String hexValue = Numeric.toHexString(signedMessage);
         EthSendTransaction transactionResponse =
-                this.besu.crosschainSendCrossChainRawTransaction(hexValue).send();
+                this.besu.crossSendCrossChainRawTransaction(hexValue).send();
 
         if (transactionResponse != null && !transactionResponse.hasError()) {
             String txHashLocal = Hash.sha3(hexValue);
@@ -305,8 +305,8 @@ public class CrosschainTransactionManager extends RawTransactionManager {
                 createSignedSubordinateView(gasPrice, gasLimit, to, data, value, crosschainContext);
 
         String hexValue = Numeric.toHexString(signedMessage);
-        CrosschainProcessSubordinateView response =
-                this.besu.crosschainProcessSubordinateView(hexValue).send();
+        CrossProcessSubordinateViewResponse response =
+                this.besu.crossProcessSubordinateView(hexValue).send();
 
         String retrunValue = response.getValue();
         List<Type> values =

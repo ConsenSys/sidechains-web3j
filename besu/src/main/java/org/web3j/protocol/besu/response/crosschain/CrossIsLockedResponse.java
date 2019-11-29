@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import org.web3j.protocol.core.Response;
 import org.web3j.utils.Numeric;
 
-public class CrosschainIsLocked extends Response<String> {
+public class CrossIsLockedResponse extends Response<String> {
 
     public Boolean isLocked() {
         BigInteger value = Numeric.decodeQuantity(getResult());
