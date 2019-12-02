@@ -15,4 +15,9 @@ package org.web3j.protocol.besu.response.crosschain;
 import org.web3j.protocol.core.Response;
 
 /** Long response type. */
-public class LongResponse extends Response<Long> {}
+public class LongResponse extends Response<String> {
+    public long getValue() {
+        // Remove the 0x at the front of the hex result.
+        return Long.valueOf(this.getResult().substring(2), 16);
+    }
+}
