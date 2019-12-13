@@ -12,14 +12,14 @@
  */
 package org.web3j.protocol.besu.response.crosschain;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import org.web3j.protocol.core.Response;
 
-public class ListCoordinationContractsResponse extends Response<List<BigInteger>> {
+public class ListCoordinationContractsResponse
+        extends Response<List<CoordinationContractInformation>> {
 
-    public List<BigInteger> getNodes() {
+    public List<CoordinationContractInformation> getInfo() {
         return getResult();
     }
 }

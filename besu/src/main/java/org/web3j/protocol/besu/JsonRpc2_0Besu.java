@@ -213,10 +213,10 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
     }
 
     public Request<?, NoResponse> crossAddCoordinationContract(
-            final String address, final String ipAddressAndPort) {
+            final BigInteger blockchainId, final String address, final String ipAddressAndPort) {
         return new Request<>(
                 "cross_addCoordinationContract",
-                Arrays.asList(address, ipAddressAndPort),
+                Arrays.asList(blockchainId, address, ipAddressAndPort),
                 web3jService,
                 NoResponse.class);
     }

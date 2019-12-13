@@ -110,7 +110,7 @@ public interface Besu extends Eea {
             final BigInteger blockchainId, final String ipAddressAndPort);
 
     Request<?, NoResponse> crossAddCoordinationContract(
-            final String address, final String ipAddressAndPort);
+            final BigInteger blockchainId, final String address, final String ipAddressAndPort);
 
     Request<?, CrossCheckUnlockResponse> crossCheckUnlock(String address);
 
