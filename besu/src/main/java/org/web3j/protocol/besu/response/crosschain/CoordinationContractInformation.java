@@ -19,6 +19,10 @@ public class CoordinationContractInformation {
     public String coodinationContract;
     public String ipAddressAndPort;
 
+    CoordinationContractInformation() {
+        // The JSON deserialisation needs a default constructor.
+    };
+
     CoordinationContractInformation(
             final BigInteger coordinationBlockchainId,
             final String coodinationContract,
