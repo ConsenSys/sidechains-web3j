@@ -32,6 +32,7 @@ import org.web3j.protocol.besu.response.crosschain.CrossProcessSubordinateViewRe
 import org.web3j.protocol.besu.response.crosschain.KeyGenFailureReasonResponse;
 import org.web3j.protocol.besu.response.crosschain.KeyGenNodesDroppedOutOfKeyGenerationResponse;
 import org.web3j.protocol.besu.response.crosschain.KeyStatusResponse;
+import org.web3j.protocol.besu.response.crosschain.ListBlockchainNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.ListCoordinationContractsResponse;
 import org.web3j.protocol.besu.response.crosschain.ListNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.LongResponse;
@@ -203,10 +204,10 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 "cross_activateKey", Arrays.asList(keyVersion), web3jService, NoResponse.class);
     }
 
-    public Request<?, NoResponse> crossAddMultichainNode(
+    public Request<?, NoResponse> crossAddLinkedNode(
             final BigInteger blockchainId, final String ipAddressAndPort) {
         return new Request<>(
-                "cross_addMultichainNode",
+                "cross_addLinkedNode",
                 Arrays.asList(blockchainId, ipAddressAndPort),
                 web3jService,
                 NoResponse.class);
@@ -314,12 +315,12 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 ListCoordinationContractsResponse.class);
     }
 
-    public Request<?, ListNodesResponse> crossListMultichainNodes() {
+    public Request<?, ListBlockchainNodesResponse> crossListLinkedNodes() {
         return new Request<>(
-                "cross_listMultichainNodes",
+                "cross_listLinkedNodes",
                 Collections.<String>emptyList(),
                 web3jService,
-                ListNodesResponse.class);
+                ListBlockchainNodesResponse.class);
     }
 
     public Request<?, CrossProcessSubordinateViewResponse> crossProcessSubordinateView(
@@ -340,9 +341,9 @@ public class JsonRpc2_0Besu extends JsonRpc2_0Eea implements Besu {
                 NoResponse.class);
     }
 
-    public Request<?, NoResponse> crossRemoveMultichainNode(final BigInteger blockchainId) {
+    public Request<?, NoResponse> crossRemoveLinkedNode(final BigInteger blockchainId) {
         return new Request<>(
-                "cross_removeMultichainNode",
+                "cross_removeLinkedNode",
                 Arrays.asList(blockchainId),
                 web3jService,
                 NoResponse.class);
