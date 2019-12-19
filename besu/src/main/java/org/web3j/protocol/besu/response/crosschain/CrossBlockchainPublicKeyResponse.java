@@ -27,8 +27,7 @@ package org.web3j.protocol.besu.response.crosschain;
 import org.web3j.protocol.core.Response;
 
 public class CrossBlockchainPublicKeyResponse extends Response<String> {
-
-    public String getKey() {
+    public String getEncodedKey() {
         return getResult();
     }
 }
