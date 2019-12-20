@@ -29,6 +29,7 @@ import org.web3j.protocol.besu.response.crosschain.CrossProcessSubordinateViewRe
 import org.web3j.protocol.besu.response.crosschain.KeyGenFailureReasonResponse;
 import org.web3j.protocol.besu.response.crosschain.KeyGenNodesDroppedOutOfKeyGenerationResponse;
 import org.web3j.protocol.besu.response.crosschain.KeyStatusResponse;
+import org.web3j.protocol.besu.response.crosschain.ListBlockchainNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.ListCoordinationContractsResponse;
 import org.web3j.protocol.besu.response.crosschain.ListNodesResponse;
 import org.web3j.protocol.besu.response.crosschain.LongResponse;
@@ -106,7 +107,7 @@ public interface Besu extends Eea {
 
     Request<?, NoResponse> crossActivateKey(final long keyVersion);
 
-    Request<?, NoResponse> crossAddMultichainNode(
+    Request<?, NoResponse> crossAddLinkedNode(
             final BigInteger blockchainId, final String ipAddressAndPort);
 
     Request<?, NoResponse> crossAddCoordinationContract(
@@ -137,7 +138,7 @@ public interface Besu extends Eea {
 
     Request<?, ListCoordinationContractsResponse> crossListCoordinationContracts();
 
-    Request<?, ListNodesResponse> crossListMultichainNodes();
+    Request<?, ListBlockchainNodesResponse> crossListLinkedNodes();
 
     Request<?, CrossProcessSubordinateViewResponse> crossProcessSubordinateView(
             String signedTransactionData);
@@ -145,7 +146,7 @@ public interface Besu extends Eea {
     Request<?, NoResponse> crossRemoveCoordinationContract(
             final BigInteger blockchainId, final String address);
 
-    Request<?, NoResponse> crossRemoveMultichainNode(final BigInteger blockchainId);
+    Request<?, NoResponse> crossRemoveLinkedNode(final BigInteger blockchainId);
 
     Request<?, EthSendTransaction> crossSendCrossChainRawTransaction(String signedTransactionData);
 
