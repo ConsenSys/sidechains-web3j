@@ -12,10 +12,9 @@
  */
 package org.web3j.protocol.besu.response.crosschain;
 
-import org.web3j.protocol.core.Response;
-
-public class KeyGenFailureReasonResponse extends Response<Integer> {
+public class KeyGenFailureReasonResponse extends LongResponse {
     public KeyGenFailureToCompleteReason getFailureReason() {
-        return KeyGenFailureToCompleteReason.create(getResult());
+        int val = Integer.valueOf(this.getResult().substring(2), 16);
+        return KeyGenFailureToCompleteReason.create(val);
     }
 }

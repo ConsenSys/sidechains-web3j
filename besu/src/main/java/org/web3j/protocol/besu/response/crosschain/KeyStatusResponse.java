@@ -12,6 +12,9 @@
  */
 package org.web3j.protocol.besu.response.crosschain;
 
-import org.web3j.protocol.core.Response;
-
-public class KeyStatusResponse extends Response<KeyStatus> {}
+public class KeyStatusResponse extends LongResponse {
+    public KeyStatus getStatus() {
+        int val = Integer.valueOf(this.getResult().substring(2), 16);
+        return KeyStatus.create(val);
+    }
+}
