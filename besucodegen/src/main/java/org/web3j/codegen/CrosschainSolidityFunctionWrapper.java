@@ -31,13 +31,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Modifier;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import org.slf4j.Logger;
@@ -439,13 +442,18 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
         return methodBuilder.build();
     }
 
+    List<MethodSpec> buildFunctions(AbiDefinition functionDefinition)
+            throws ClassNotFoundException {
+        return buildFunctions(functionDefinition, true);
+    }
+
     List<MethodSpec> buildFunctions(AbiDefinition functionDefinition, boolean useUpperCase)
             throws ClassNotFoundException {
 
         List<MethodSpec> results = new ArrayList<>(2);
         String functionName = functionDefinition.getName();
 
-        if (this.generateSendTxForCalls) {
+        if (generateSendTxForCalls) {
             final String funcNamePrefix;
             if (functionDefinition.isConstant()) {
                 funcNamePrefix = "call";
@@ -467,7 +475,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
 
         String inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
         final List<TypeName> outputParameterTypes =
-                buildTypeNames(functionDefinition.getOutputs(), this.useJavaPrimitiveTypes);
+                buildTypeNames(functionDefinition.getOutputs(), useJavaPrimitiveTypes);
 
         if (functionDefinition.isConstant()) {
             // Avoid generating runtime exception call
@@ -524,16 +532,20 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                 results.add(methodBuilder.build());
 
                 // Create the function as an originating crosschain transaction method.
-                functionName = functionDefinition.getName() + "_AsCrosschainTransaction";
+                functionName = functionDefinition.getName() + "_AsCrosschainOriginatingTransaction";
                 methodBuilder =
                         MethodSpec.methodBuilder(functionName).addModifiers(Modifier.PUBLIC);
                 inputParams = addParameters(methodBuilder, functionDefinition.getInputs());
                 // Add crosschain context as an additional parameter.
                 methodBuilder.addParameter(
                         ClassName.get(CrosschainContext.class), CROSSCHAIN_CONTEXT, Modifier.FINAL);
-                buildTransactionFunctionAsCrosschainTransaction(
+                buildTransactionFunctionAsOriginatingTransaction(
                         functionDefinition, methodBuilder, inputParams, useUpperCase);
                 results.add(methodBuilder.build());
+            } else {
+                System.out.println(
+                        "UNIMPLEMENTED: requested wrapper for payable transaction: "
+                                + functionDefinition.getName());
             }
         }
 
@@ -607,7 +619,7 @@ public class CrosschainSolidityFunctionWrapper extends SolidityFunctionWrapper {
                         + ")");
     }
 
-    private void buildTransactionFunctionAsCrosschainTransaction(
+    private void buildTransactionFunctionAsOriginatingTransaction(
             AbiDefinition functionDefinition,
             MethodSpec.Builder methodBuilder,
             String inputParams,
