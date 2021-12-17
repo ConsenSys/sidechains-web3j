@@ -1,3 +1,5 @@
+**This repo is no longer in use. It contains historical information about Atomic Crosschain Transactions for Ethereum Private Sidechains. Please see https://github.com/ConsenSys/gpact for information about the General Purpose Atomic Crosschain Transaction protocol.**
+
 .. To build this file locally ensure docutils Python package is installed and run:
    $ rst2html.py README.rst README.html
 
